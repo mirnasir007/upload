@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shopify Bulk Importer Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dropdown-menu { display: none; position: absolute; z-index: 50; width: 100%; background: white; border: 1px solid #d1d5db; border-radius: 4px; margin-top: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .dropdown-menu.show { display: block; }
+        .product-card { border: 1px solid #e5e7eb; padding: 20px; margin-bottom: 24px; border-radius: 8px; }
+        .img-grid { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; max-height: 350px; overflow-y: auto; padding: 5px; border: 1px solid #eee; border-radius: 4px; }
+        .img-item { position: relative; width: 80px; height: 80px; transition: 0.2s; cursor: grab; }
+        .img-item:active { cursor: grabbing; }
+        .img-item img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #e5e7eb; border-radius: 6px; }
+        .img-item img:hover { transform: scale(1.05); }
+        .img-item .remove-btn { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; z-index: 10; }
+        .img-item .view-btn { position: absolute; bottom: 0; left: 0; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; font-size: 14px; cursor: pointer; border-top-right-radius: 6px; border-bottom-left-radius: 6px; transition: background 0.2s; z-index: 10; }
+        .img-item .view-btn:hover { background: #3b82f6; }
+        .main-img { border-color: #3b82f6 !important; border-width: 4px !important; }
+        .loader { display: none; border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #3b82f6; width: 20px; height: 20px; animation: spin 1s linear infinite; margin-left: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .list-item { display: flex; items-center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
+        .list-item:hover { background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
+    <div class="max-w-5xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg border border-gray-100">
+        <h2 class="text-3xl font-extrabold mb-8 text-gray-900 border-b pb-4">Shopify Bulk Importer Pro</h2>
+        
+        <div id="step1" class="space-y-6">
+            <h3 class="text-xl font-bold text-gray-700 mb-2">Step 1: Target Destination</h3>
+            <p class="text-sm text-gray-500 mb-4">Select the collections and tags that will be applied to all imported products.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="relative">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Target Collections</label>
+                    <button id="colDropdownBtn" type="button" class="w-full bg-white border border-gray-300 p-3 rounded-lg flex justify-between items-center text-gray-700 hover:border-blue-500 focus:outline-none transition">
+                        <span id="colDropdownText" class="truncate font-medium">Select Collections</span>
+                        <span class="text-xs text-gray-400">▼</span>
+                    </button>
+                    <div id="colDropdownMenu" class="dropdown-menu">
+                        <input type="text" id="colSearch" placeholder="Search collections..." class="w-full p-3 border-b border-gray-200 focus:outline-none text-sm">
+                        <div id="colList" class="max-h-60 overflow-y-auto p-2">
+                            <p class="text-sm text-gray-500 italic p-2">Loading all collections...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Global Tags (Multi-select)</label>
+                    <button id="tagDropdownBtn" type="button" class="w-full bg-white border border-gray-300 p-3 rounded-lg flex justify-between items-center text-gray-700 hover:border-blue-500 focus:outline-none transition">
+                        <span id="tagDropdownText" class="truncate font-medium">Select Tags</span>
+                        <span class="text-xs text-gray-400">▼</span>
+                    </button>
+                    <div id="tagDropdownMenu" class="dropdown-menu">
+                        <input type="text" id="tagSearch" placeholder="Search or add custom tag (Press Enter)" class="w-full p-3 border-b border-gray-200 focus:outline-none text-sm">
+                        <div id="tagList" class="max-h-60 overflow-y-auto p-2">
+                            <p class="text-sm text-gray-500 italic p-2">Loading tags from store...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-end border-t pt-6">
+                <button onclick="goToStep2()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:scale-105">
+                    Next Step ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="step2" class="hidden space-y-6">
+            <div class="flex justify-between items-center border-b pb-4 mb-4">
+                <h3 class="text-xl font-bold text-gray-700">Step 2: Fetch & Import</h3>
+                <button onclick="goToStep1()" class="text-sm text-blue-600 hover:underline font-semibold">
+                    ← Back to Settings
+                </button>
+            </div>
+
+            <div class="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-8">
+                <label class="block text-sm font-bold text-gray-800 mb-2">Vendor Collection URL</label>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input type="text" id="collectionUrl" placeholder="https://vendor.com/collections/all" class="flex-1 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                    <button onclick="fetchCollection()" id="loadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-lg shadow-md flex items-center justify-center transition whitespace-nowrap">
+                        Load Products <div id="spinner" class="loader border-white border-t-transparent"></div>
+                    </button>
+                </div>
+            </div>
+
+            <div id="bulkEditSection" class="hidden bg-gray-100 p-5 rounded-lg border border-gray-200 mb-6 flex flex-wrap gap-4 items-end shadow-sm">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Price</label>
+                    <input type="number" step="0.01" id="globalPrice" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-32" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global SKU</label>
+                    <input type="text" id="globalSku" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-48" placeholder="SKU-ALL">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Vendor</label>
+                    <input type="text" id="globalVendor" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-48" placeholder="Vendor Name">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Qty</label>
+                    <input type="number" id="globalQty" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-32" placeholder="0">
+                </div>
+                <button onclick="applyGlobalSettings()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded shadow transition">
+                    Apply to All Loaded Products
+                </button>
+            </div>
+
+            <div id="productContainer"></div>
+        </div>
+    </div>
+
+    <div id="imageModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-80 flex justify-center items-center backdrop-blur-sm">
+        <span onclick="closeImageModal()" class="absolute top-5 right-8 text-white text-5xl cursor-pointer hover:text-gray-300 transition">&times;</span>
+        <img id="modalImage" src="" class="max-w-[90vw] max-h-[90vh] rounded shadow-2xl border-4 border-white object-contain">
+    </div>
+
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbywFzQu0m-wMkHFGAAy7irzlX20ixCBUqXEQfpmhlqNhG_Fa3113c9ufOvJxheDbUEO/exec"; 
+        
+        let allCollections = [];
+        let storeTags = [];
+        let selectedCollections = [];
+        let selectedTags = [];
+        let currentProducts = [];
+
+        document.addEventListener('DOMContentLoaded', loadStoreData);
+
+        async function loadStoreData() {
+            try {
+                const res = await fetch(WEB_APP_URL + "?action=getStoreData");
+                const data = await res.json();
+                if(data.status === "success") {
+                    allCollections = data.collections;
+                    storeTags = data.tags;
+                    renderColList();
+                    renderTagList();
+                }
+            } catch (e) { console.error("API Error", e); }
+        }
+
+        function goToStep2() {
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+        }
+
+        function goToStep1() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+        }
+
+        const setupDropdown = (btnId, menuId) => {
+            document.getElementById(btnId).addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                document.getElementById(menuId).classList.toggle('show');
+            });
+        };
+
+        setupDropdown('colDropdownBtn', 'colDropdownMenu');
+        setupDropdown('tagDropdownBtn', 'tagDropdownMenu');
+
+        function closeAllMenus() {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) closeAllMenus();
+        });
+
+        function renderColList(filterText = "") {
+            const container = document.getElementById('colList');
+            container.innerHTML = "";
+            const filtered = allCollections.filter(c => c.title.toLowerCase().includes(filterText.toLowerCase()));
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-sm text-gray-500 p-2">No match found.</p>`;
+                return;
+            }
+
+            filtered.forEach(c => {
+                const isChecked = selectedCollections.includes(c.id);
+                const badge = c.type === 'smart' ? `<span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 rounded ml-2">Automated</span>` : `<span class="text-[10px] bg-green-100 text-green-800 px-1 rounded ml-2">Custom</span>`;
+                const label = document.createElement('label');
+                label.className = "list-item flex items-center space-x-3";
+                label.innerHTML = `<input type="checkbox" value="${c.id}" class="w-4 h-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><span class="text-sm font-medium">${escapeHtml(c.title)} ${badge}</span>`;
+                label.querySelector('input').addEventListener('change', (e) => handleColSelection(c.id, e.target.checked));
+                container.appendChild(label);
+            });
+        }
+
+        function handleColSelection(id, isChecked) {
+            if (isChecked) {
+                if (!selectedCollections.includes(id)) selectedCollections.push(id);
+            } else {
+                selectedCollections = selectedCollections.filter(cId => cId !== id);
+            }
+            document.getElementById('colDropdownText').innerText = selectedCollections.length > 0 ? `${selectedCollections.length} Collection(s)` : "Select Collections";
+        }
+
+        function renderTagList(filterText = "") {
+            const container = document.getElementById('tagList');
+            container.innerHTML = "";
+            const uniqueTags = [...new Set([...storeTags, ...selectedTags])];
+            const filtered = uniqueTags.filter(t => t.toLowerCase().includes(filterText.toLowerCase()));
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-sm text-gray-500 p-2">Press Enter to add custom tag.</p>`;
+                return;
+            }
+
+            filtered.forEach(t => {
+                const isChecked = selectedTags.includes(t);
+                const label = document.createElement('label');
+                label.className = "list-item flex items-center space-x-3";
+                label.innerHTML = `<input type="checkbox" value="${escapeHtml(t)}" class="w-4 h-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><span class="text-sm font-medium">${escapeHtml(t)}</span>`;
+                label.querySelector('input').addEventListener('change', (e) => handleTagSelection(t, e.target.checked));
+                container.appendChild(label);
+            });
+        }
+
+        function handleTagSelection(tag, isChecked) {
+            if (isChecked) {
+                if (!selectedTags.includes(tag)) selectedTags.push(tag);
+            } else {
+                selectedTags = selectedTags.filter(t => t !== tag);
+            }
+            document.getElementById('tagDropdownText').innerText = selectedTags.length > 0 ? selectedTags.join(", ") : "Select Tags";
+        }
+
+        // Attach missing input listeners for live search filtering
+        document.getElementById('colSearch').addEventListener('input', (e) => renderColList(e.target.value));
+        document.getElementById('tagSearch').addEventListener('input', (e) => renderTagList(e.target.value));
+
+        document.getElementById('tagSearch').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const newTag = e.target.value.trim();
+                if (newTag && !selectedTags.includes(newTag)) {
+                    selectedTags.push(newTag);
+                    if (!storeTags.includes(newTag)) storeTags.push(newTag);
+                    handleTagSelection(newTag, true);
+                    e.target.value = '';
+                    renderTagList();
+                }
+            }
+        });
+
+        async function fetchCollection() {
+            const urlInput = document.getElementById('collectionUrl').value.trim();
+            if(!urlInput) return alert("URL Error.");
+            
+            const btn = document.getElementById('loadBtn');
+            const spinner = document.getElementById('spinner');
+            const container = document.getElementById('productContainer');
+            
+            btn.disabled = true; spinner.style.display = "block";
+            container.innerHTML = `<div class="text-center py-10 text-gray-600 font-bold animate-pulse">Fetching products...</div>`;
+            document.getElementById('bulkEditSection').classList.add('hidden');
+
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=fetchCollection&url=${encodeURIComponent(urlInput)}`);
+                const data = await response.json();
+                if(data.status === "success") {
+                    currentProducts = data.products;
+                    if(currentProducts.length > 0) {
+                        document.getElementById('bulkEditSection').classList.remove('hidden');
+                        renderProducts();
+                    } else container.innerHTML = "No products found.";
+                } else alert("Error: " + data.message);
+            } catch (e) { alert("Network error."); }
+            finally { btn.disabled = false; spinner.style.display = "none"; }
+        }
+
+        function applyGlobalSettings() {
+            const price = document.getElementById('globalPrice').value;
+            const sku = document.getElementById('globalSku').value;
+            const vendor = document.getElementById('globalVendor').value;
+            const qty = document.getElementById('globalQty').value;
+            
+            currentProducts.forEach((p, idx) => {
+                if (price) document.getElementById(`price-${idx}`).value = price;
+                if (sku) document.getElementById(`sku-${idx}`).value = sku;
+                if (vendor) document.getElementById(`vendor-${idx}`).value = vendor;
+                if (qty) document.getElementById(`qty-${idx}`).value = qty;
+            });
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('productContainer');
+            container.innerHTML = "";
+            
+            currentProducts.forEach((p, index) => {
+                const card = document.createElement('div');
+                card.className = "product-card bg-white shadow-sm hover:shadow-md transition-shadow";
+                card.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-8">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Product Title</label>
+                            <input type="text" class="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:border-blue-500 font-medium" value="${escapeHtml(p.title)}" id="title-${index}">
+                            
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Description (HTML)</label>
+                            <textarea class="w-full p-3 border border-gray-300 rounded mb-4 h-48 font-mono text-sm focus:outline-none focus:border-blue-500" id="desc-${index}">${escapeHtml(p.body_html || "")}</textarea>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                <div><label class="block text-sm font-bold text-gray-700 mb-1">Price</label><input type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded" id="price-${index}"></div>
+                                <div><label class="block text-sm font-bold text-gray-700 mb-1">SKU</label><input type="text" class="w-full p-3 border border-gray-300 rounded" id="sku-${index}"></div>
+                                <div><label class="block text-sm font-bold text-gray-700 mb-1">Vendor</label><input type="text" class="w-full p-3 border border-gray-300 rounded" value="${escapeHtml(p.vendor || "")}" id="vendor-${index}"></div>
+                                <div><label class="block text-sm font-bold text-gray-700 mb-1">Qty</label><input type="number" class="w-full p-3 border border-gray-300 rounded" id="qty-${index}"></div>
+                                <div><label class="block text-sm font-bold text-gray-700 mb-1">Type</label><input type="text" class="w-full p-3 border border-gray-300 rounded" value="${escapeHtml(p.product_type || "")}" id="type-${index}"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="lg:col-span-4 bg-gray-50 p-5 rounded-lg border border-gray-200 flex flex-col justify-between">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-3 border-b pb-2">Media (Drag to reorder)</label>
+                                <div class="img-grid bg-white p-2" id="imgs-${index}"></div>
+                            </div>
+                            <button onclick="uploadToShopify(${index})" id="upBtn-${index}" class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold shadow-md uppercase">Upload to Store</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+                renderImagesOnly(index); 
+            });
+        }
+
+        function renderImagesOnly(pIdx) {
+            const container = document.getElementById(`imgs-${pIdx}`);
+            const p = currentProducts[pIdx];
+            if (p.images.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm">No images.</p>';
+                return;
+            }
+            container.innerHTML = p.images.map((img, imgIdx) => `
+                <div class="img-item" draggable="true" ondragstart="dragStart(event, ${pIdx}, ${imgIdx})" ondragover="dragOver(event)" ondrop="drop(event, ${pIdx}, ${imgIdx})">
+                    <img src="${img.src}" class="${imgIdx === 0 ? 'main-img' : ''}" title="Drag to change placement">
+                    <span class="remove-btn" onclick="removeImg(${pIdx}, ${imgIdx})">×</span>
+                    <span class="view-btn" onclick="openImageModal('${img.src}')">👁️</span>
+                </div>
+            `).join('');
+        }
+
+        function dragStart(e, pIdx, imgIdx) { e.dataTransfer.setData("text/plain", JSON.stringify({ pIdx, imgIdx })); }
+        function dragOver(e) { e.preventDefault(); }
+        function drop(e, targetPIdx, targetImgIdx) {
+            e.preventDefault();
+            const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+            if (data.pIdx === targetPIdx && data.imgIdx !== targetImgIdx) {
+                const draggedImg = currentProducts[targetPIdx].images.splice(data.imgIdx, 1)[0];
+                currentProducts[targetPIdx].images.splice(targetImgIdx, 0, draggedImg);
+                renderImagesOnly(targetPIdx);
+            }
+        }
+
+        function removeImg(pIdx, imgIdx) {
+            currentProducts[pIdx].images.splice(imgIdx, 1);
+            renderImagesOnly(pIdx); 
+        }
+
+        function openImageModal(src) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+        function closeImageModal() { document.getElementById('imageModal').classList.add('hidden'); }
+        document.getElementById('imageModal').addEventListener('click', function(e) { if(e.target===this) closeImageModal(); });
+
+        function escapeHtml(unsafe) {
+            if(!unsafe) return "";
+            return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        async function uploadToShopify(index) {
+            const btn = document.getElementById(`upBtn-${index}`);
+            btn.innerText = "Processing..."; btn.disabled = true;
+            btn.classList.replace('bg-green-600', 'bg-gray-400');
+
+            const payload = {
+                action: "uploadProduct", collection_ids: selectedCollections, qty: document.getElementById(`qty-${index}`).value || "0",
+                product: {
+                    title: document.getElementById(`title-${index}`).value, body_html: document.getElementById(`desc-${index}`).value,
+                    vendor: document.getElementById(`vendor-${index}`).value, product_type: document.getElementById(`type-${index}`).value,
+                    tags: selectedTags.join(", "),
+                    variants: [{ price: document.getElementById(`price-${index}`).value, sku: document.getElementById(`sku-${index}`).value }],
+                    images: currentProducts[index].images.map(img => img.src)
+                }
+            };
+
+            try {
+                const res = await (await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })).json();
+                if(res.status === "success") {
+                    btn.innerText = "UPLOADED ✓";
+                    btn.classList.replace('bg-gray-400', 'bg-blue-600');
+                } else {
+                    alert("Error: " + res.message);
+                    btn.innerText = "Upload to Store"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-green-600');
+                }
+            } catch (e) { alert("Upload failed."); btn.innerText = "Upload to Store"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-green-600'); }
+        }
+    </script>
+</body>
+</html>

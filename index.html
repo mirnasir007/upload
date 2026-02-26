@@ -120,13 +120,22 @@
                         <option value="draft">Draft</option>
                     </select>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-wrap items-center">
                     <button onclick="applyGlobalSettings()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded shadow transition">
                         Apply to All
                     </button>
                     <button onclick="applyGlobalMoveToType()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded shadow transition" title="Move all existing Product Titles to Type and clear Title boxes">
                         Move All Titles to Type ➔
                     </button>
+                    <div class="ml-auto flex items-center gap-4 bg-white p-2 rounded border border-gray-300 shadow-sm">
+                        <label class="flex items-center space-x-2 cursor-pointer text-sm font-bold text-gray-800">
+                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="w-5 h-5 text-blue-600 rounded cursor-pointer border-gray-300 focus:ring-blue-500">
+                            <span>Select All</span>
+                        </label>
+                        <button id="bulkUploadBtn" onclick="startBulkUpload()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded shadow-lg transition transform hover:scale-105">
+                            Upload Selected Products
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -162,6 +171,94 @@
         const BATCH_SIZE = 10; 
 
         document.addEventListener('DOMContentLoaded', loadStoreData);
+
+
+ function toggleSelectAll() {
+            const isChecked = document.getElementById('selectAllCheckbox').checked;
+            const checkboxes = document.querySelectorAll('.product-select-checkbox');
+            checkboxes.forEach(cb => cb.checked = isChecked);
+        }
+
+        // Error message show korar notun function ekhane add kora holo
+        function showCardError(index, msg) {
+            const card = document.getElementById(`card-${index}`);
+            if (!card) return;
+            let errDiv = document.getElementById(`err-${index}`);
+            if (!errDiv) {
+                errDiv = document.createElement('div');
+                errDiv.id = `err-${index}`;
+                errDiv.className = "mt-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 font-medium text-sm rounded shadow-sm";
+                card.appendChild(errDiv);
+            }
+            errDiv.innerText = msg;
+        }
+
+        let isBulkUploading = false;
+
+        async function startBulkUpload() {
+            if (isBulkUploading) return;
+            
+            const selectedCheckboxes = document.querySelectorAll('.product-select-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert("Please select at least one product to upload.");
+                return;
+            }
+
+            const activeCards = Array.from(selectedCheckboxes).map(cb => cb.closest('.product-card'));
+
+            isBulkUploading = true;
+            const bulkBtn = document.getElementById('bulkUploadBtn');
+            const originalBtnText = bulkBtn.innerText;
+            bulkBtn.innerText = "Processing Selected...";
+            bulkBtn.classList.replace('bg-green-600', 'bg-gray-600');
+            bulkBtn.disabled = true;
+
+            for (let i = 0; i < activeCards.length; i++) {
+                const card = activeCards[i];
+                if (!document.body.contains(card)) continue;
+
+                const index = card.id.split('-')[1];
+                const btn = document.getElementById(`upBtn-${index}`);
+                
+                if (!btn || btn.disabled) continue;
+
+                await uploadToShopify(index);
+
+                let nextCardIndex = -1;
+                for (let j = i + 1; j < activeCards.length; j++) {
+                    if (document.body.contains(activeCards[j])) {
+                        nextCardIndex = j;
+                        break;
+                    }
+                }
+
+                if (nextCardIndex !== -1) {
+                    const nextCard = activeCards[nextCardIndex];
+                    const nextIndex = nextCard.id.split('-')[1];
+                    const nextBtn = document.getElementById(`upBtn-${nextIndex}`);
+                    
+                    if (nextBtn && !nextBtn.disabled) {
+                        for (let t = 5; t > 0; t--) {
+                            nextBtn.innerText = `Uploading in ${t}...`;
+                            nextBtn.classList.remove('bg-green-600', 'bg-red-600');
+                            nextBtn.classList.add('bg-yellow-500');
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+                        nextBtn.classList.remove('bg-yellow-500');
+                        nextBtn.classList.add('bg-green-600');
+                    }
+                }
+            }
+
+            isBulkUploading = false;
+            bulkBtn.innerText = originalBtnText;
+            bulkBtn.classList.replace('bg-gray-600', 'bg-green-600');
+            bulkBtn.disabled = false;
+            
+            const selectAllCb = document.getElementById('selectAllCheckbox');
+            if(selectAllCb) selectAllCb.checked = false;
+        }
+
 
         async function loadStoreData() {
             try {
@@ -426,7 +523,10 @@
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         <div class="lg:col-span-8">
                             <div class="flex justify-between items-center mb-1">
-    <label class="block text-sm font-bold text-gray-700">Product Title</label>
+    <label class="flex items-center space-x-2 cursor-pointer block text-sm font-bold text-gray-800 bg-blue-50 px-2 py-1 rounded border border-blue-100">
+        <input type="checkbox" id="select-${index}" class="product-select-checkbox w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+        <span>Select Product</span>
+    </label>
     <div class="flex gap-2">
         <button onclick="moveToType(${index})" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200 transition font-bold" title="Move current title to Product Type and clear title box">
             Move to Type ➔
@@ -564,11 +664,9 @@ function removeProductCard(index) {
             try {
                 const res = await (await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })).json();
                 
-                // Hide and remove the product from UI if upload is successful
                 if(res.status === "success") {
                     const card = document.getElementById(`card-${index}`);
                     
-                    // Show a beautiful success message inside the card
                     card.innerHTML = `
                         <div class="text-center py-12 bg-green-50 rounded-lg border border-green-200">
                             <h3 class="text-3xl font-extrabold text-green-600 mb-2">✓ Uploaded Successfully</h3>
@@ -577,19 +675,21 @@ function removeProductCard(index) {
                         </div>
                     `;
                     
-                    // Smoothly fade out and remove from DOM after 1.5 seconds
                     setTimeout(() => {
                         card.style.opacity = "0";
                         setTimeout(() => card.remove(), 500);
                     }, 1500);
+                    return true;
 
                 } else {
-                    alert("Error: " + res.message);
-                    btn.innerText = "Upload to Store"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-green-600');
+                    showCardError(index, "Error: " + res.message);
+                    btn.innerText = "Upload Failed"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-red-600');
+                    return false;
                 }
             } catch (e) { 
-                alert("Upload failed."); 
-                btn.innerText = "Upload to Store"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-green-600'); 
+                showCardError(index, "Upload failed due to network error."); 
+                btn.innerText = "Upload Failed"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-red-600'); 
+                return false;
             }
         }
     </script>

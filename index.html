@@ -426,11 +426,16 @@
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         <div class="lg:col-span-8">
                             <div class="flex justify-between items-center mb-1">
-                                <label class="block text-sm font-bold text-gray-700">Product Title</label>
-                                <button onclick="moveToType(${index})" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200 transition font-bold" title="Move current title to Product Type and clear title box">
-                                    Move to Type ➔
-                                </button>
-                            </div>
+    <label class="block text-sm font-bold text-gray-700">Product Title</label>
+    <div class="flex gap-2">
+        <button onclick="moveToType(${index})" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200 transition font-bold" title="Move current title to Product Type and clear title box">
+            Move to Type ➔
+        </button>
+        <button onclick="removeProductCard(${index})" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition font-bold" title="Remove this product from list">
+            ✖ Remove
+        </button>
+    </div>
+</div>
                             <input type="text" class="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:border-blue-500 font-medium" value="${escapeHtml(p.title)}" id="title-${index}">
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -472,6 +477,14 @@
                 container.appendChild(card);
                 renderImagesOnly(index); 
             });
+        }
+function removeProductCard(index) {
+            const card = document.getElementById(`card-${index}`);
+            if (card) {
+                // Smooth animation diye card ta remove kora
+                card.style.opacity = "0";
+                setTimeout(() => card.remove(), 300);
+            }
         }
 
         function renderImagesOnly(pIdx) {

@@ -45,6 +45,7 @@
                             <p class="text-sm text-gray-500 italic p-2">Loading all collections...</p>
                         </div>
                     </div>
+                    <div id="selectedColsContainer" class="flex flex-wrap gap-2 mt-3"></div>
                 </div>
 
                 <div class="relative">
@@ -59,6 +60,7 @@
                             <p class="text-sm text-gray-500 italic p-2">Loading tags from store...</p>
                         </div>
                     </div>
+                    <div id="selectedTagsContainer" class="flex flex-wrap gap-2 mt-3"></div>
                 </div>
             </div>
 
@@ -238,7 +240,7 @@
                     const nextBtn = document.getElementById(`upBtn-${nextIndex}`);
                     
                     if (nextBtn && !nextBtn.disabled) {
-                        for (let t = 5; t > 0; t--) {
+                        for (let t = 7; t > 0; t--) {
                             nextBtn.innerText = `Uploading in ${t}...`;
                             nextBtn.classList.remove('bg-green-600', 'bg-red-600');
                             nextBtn.classList.add('bg-yellow-500');
@@ -305,7 +307,26 @@
         function renderColList(filterText = "") {
             const container = document.getElementById('colList');
             container.innerHTML = "";
-            const filtered = allCollections.filter(c => c.title.toLowerCase().includes(filterText.toLowerCase()));
+            
+            const lowerFilter = filterText.toLowerCase();
+            let filtered = [];
+            
+            if (lowerFilter === "") {
+                filtered = allCollections;
+            } else {
+                const exactMatch = [];
+                const startsWithMatch = [];
+                const includesMatch = [];
+                
+                allCollections.forEach(c => {
+                    const titleLower = c.title.toLowerCase();
+                    if (titleLower === lowerFilter) exactMatch.push(c);
+                    else if (titleLower.startsWith(lowerFilter)) startsWithMatch.push(c);
+                    else if (titleLower.includes(lowerFilter)) includesMatch.push(c);
+                });
+                
+                filtered = [...exactMatch, ...startsWithMatch, ...includesMatch];
+            }
             
             if (filtered.length === 0) {
                 container.innerHTML = `<p class="text-sm text-gray-500 p-2">No match found.</p>`;
@@ -317,7 +338,7 @@
                 const badge = c.type === 'smart' ? `<span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 rounded ml-2">Automated</span>` : `<span class="text-[10px] bg-green-100 text-green-800 px-1 rounded ml-2">Custom</span>`;
                 const label = document.createElement('label');
                 label.className = "list-item flex items-center space-x-3";
-                label.innerHTML = `<input type="checkbox" value="${c.id}" class="w-4 h-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><span class="text-sm font-medium">${escapeHtml(c.title)} ${badge}</span>`;
+                label.innerHTML = `<input type="checkbox" value="${c.id}" class="col-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><span class="text-sm font-medium">${escapeHtml(c.title)} ${badge}</span>`;
                 label.querySelector('input').addEventListener('change', (e) => handleColSelection(c.id, e.target.checked));
                 container.appendChild(label);
             });
@@ -330,13 +351,53 @@
                 selectedCollections = selectedCollections.filter(cId => cId !== id);
             }
             document.getElementById('colDropdownText').innerText = selectedCollections.length > 0 ? `${selectedCollections.length} Collection(s)` : "Select Collections";
+            updateSelectedColsUI();
+            
+            const checkboxes = document.querySelectorAll('.col-checkbox');
+            checkboxes.forEach(cb => {
+                if (cb.value == id) cb.checked = isChecked;
+            });
+        }
+
+        function updateSelectedColsUI() {
+            const container = document.getElementById('selectedColsContainer');
+            if(!container) return;
+            container.innerHTML = "";
+            selectedCollections.forEach(id => {
+                const collection = allCollections.find(c => c.id === id);
+                if(collection) {
+                    const chip = document.createElement('span');
+                    chip.className = "inline-flex items-center bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded border border-blue-200";
+                    chip.innerHTML = `${escapeHtml(collection.title)} <button type="button" onclick="handleColSelection(${id}, false)" class="ml-2 text-blue-500 hover:text-blue-900 focus:outline-none text-lg leading-none">&times;</button>`;
+                    container.appendChild(chip);
+                }
+            });
         }
 
         function renderTagList(filterText = "") {
             const container = document.getElementById('tagList');
             container.innerHTML = "";
             const uniqueTags = [...new Set([...storeTags, ...selectedTags])];
-            const filtered = uniqueTags.filter(t => t.toLowerCase().includes(filterText.toLowerCase()));
+            
+            const lowerFilter = filterText.toLowerCase();
+            let filtered = [];
+            
+            if (lowerFilter === "") {
+                filtered = uniqueTags;
+            } else {
+                const exactMatch = [];
+                const startsWithMatch = [];
+                const includesMatch = [];
+                
+                uniqueTags.forEach(t => {
+                    const tagLower = t.toLowerCase();
+                    if (tagLower === lowerFilter) exactMatch.push(t);
+                    else if (tagLower.startsWith(lowerFilter)) startsWithMatch.push(t);
+                    else if (tagLower.includes(lowerFilter)) includesMatch.push(t);
+                });
+                
+                filtered = [...exactMatch, ...startsWithMatch, ...includesMatch];
+            }
             
             if (filtered.length === 0) {
                 container.innerHTML = `<p class="text-sm text-gray-500 p-2">Press Enter to add custom tag.</p>`;
@@ -347,7 +408,7 @@
                 const isChecked = selectedTags.includes(t);
                 const label = document.createElement('label');
                 label.className = "list-item flex items-center space-x-3";
-                label.innerHTML = `<input type="checkbox" value="${escapeHtml(t)}" class="w-4 h-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><span class="text-sm font-medium">${escapeHtml(t)}</span>`;
+                label.innerHTML = `<input type="checkbox" value="${escapeHtml(t)}" class="tag-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><span class="text-sm font-medium">${escapeHtml(t)}</span>`;
                 label.querySelector('input').addEventListener('change', (e) => handleTagSelection(t, e.target.checked));
                 container.appendChild(label);
             });
@@ -359,7 +420,26 @@
             } else {
                 selectedTags = selectedTags.filter(t => t !== tag);
             }
-            document.getElementById('tagDropdownText').innerText = selectedTags.length > 0 ? selectedTags.join(", ") : "Select Tags";
+            document.getElementById('tagDropdownText').innerText = selectedTags.length > 0 ? `${selectedTags.length} Tag(s) Selected` : "Select Tags";
+            updateSelectedTagsUI();
+            
+            const checkboxes = document.querySelectorAll('.tag-checkbox');
+            checkboxes.forEach(cb => {
+                if (cb.value === escapeHtml(tag)) cb.checked = isChecked;
+            });
+        }
+
+        function updateSelectedTagsUI() {
+            const container = document.getElementById('selectedTagsContainer');
+            if(!container) return;
+            container.innerHTML = "";
+            selectedTags.forEach(tag => {
+                const chip = document.createElement('span');
+                chip.className = "inline-flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-1 rounded border border-green-200";
+                const safeTag = escapeHtml(tag).replace(/'/g, "\\'");
+                chip.innerHTML = `${escapeHtml(tag)} <button type="button" onclick="handleTagSelection('${safeTag}', false)" class="ml-2 text-green-600 hover:text-green-900 focus:outline-none text-lg leading-none">&times;</button>`;
+                container.appendChild(chip);
+            });
         }
 
         document.getElementById('colSearch').addEventListener('input', (e) => renderColList(e.target.value));

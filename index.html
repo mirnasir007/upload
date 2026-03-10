@@ -23,9 +23,11 @@
         .list-item { display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
         .list-item:hover { background-color: #f3f4f6; }
         /* Style for ContentEditable Rich Text Editor */
-        #scEditor table { border-collapse: collapse; width: 100%; font-size: 13px; }
-        #scEditor td, #scEditor th { border: 1px solid #ddd; padding: 6px; }
+        #scEditor table { border-collapse: collapse; width: 100% !important; max-width: 100% !important; table-layout: auto !important; font-size: 14px; text-align: left; }
+        #scEditor th { padding: 8px; border: 1px solid #ddd; color: #333; font-weight: bold; white-space: normal !important; word-wrap: break-word !important; word-break: break-word !important; }
+        #scEditor td { border: 1px solid #ddd; padding: 8px; color: #333; white-space: normal !important; word-wrap: break-word !important; word-break: break-word !important; }
         #scEditor img { max-width: 100%; height: auto; }
+        #scEditor { overflow-x: hidden; }
         #scEditor:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
     </style>
 </head>
@@ -225,8 +227,22 @@
         
         async function saveSizeChart() {
             const title = document.getElementById('scTitle').value.trim();
-            const html = document.getElementById('scEditor').innerHTML.trim(); // Get Rich Text HTML
-            if(!title || !html || html === "<br>") return alert("Title and Content are required.");
+            let rawHtml = document.getElementById('scEditor').innerHTML.trim(); // Get Rich Text HTML
+            if(!title || !rawHtml || rawHtml === "<br>") return alert("Title and Content are required.");
+            
+            // Apply beautiful and responsive styling to tables
+            if(rawHtml.includes("<table")) {
+                // Changed /i to /gi to fix ALL tables at once, and table-layout: auto for natural text wrapping (height increase)
+                rawHtml = rawHtml.replace(/<table[^>]*>/gi, '<table style="width: 100% !important; max-width: 100% !important; table-layout: auto !important; box-sizing: border-box; border-collapse: collapse; text-align: left; font-family: inherit; margin-bottom: 20px;">');
+                
+                // Force word wrapping in headers to increase height instead of width
+                rawHtml = rawHtml.replace(/<th[^>]*>/gi, '<th style="padding: 8px; border: 1px solid #ddd; color: #333; font-weight: bold; box-sizing: border-box; text-align: left; white-space: normal !important; word-wrap: break-word !important; word-break: break-word !important;">');
+                
+                // Force word wrapping in cells to increase height instead of width
+                rawHtml = rawHtml.replace(/<td[^>]*>/gi, '<td style="padding: 8px; border: 1px solid #ddd; color: #333; box-sizing: border-box; text-align: left; white-space: normal !important; word-wrap: break-word !important; word-break: break-word !important;">');
+            }
+            
+            const html = rawHtml;
             
             const btn = document.getElementById('scSaveBtn');
             btn.innerText = "Saving to Shopify..."; btn.disabled = true;
@@ -403,7 +419,7 @@
                 if (nextCardIndex !== -1) {
                     const nextBtn = document.getElementById(`upBtn-${activeCards[nextCardIndex].id.split('-')[1]}`);
                     if (nextBtn && !nextBtn.disabled) {
-                        for (let t = 7; t > 0; t--) { nextBtn.innerText = `Uploading in ${t}...`; nextBtn.classList.add('bg-yellow-500'); await new Promise(r => setTimeout(r, 1000)); }
+                        for (let t = 10; t > 0; t--) { nextBtn.innerText = `Uploading in ${t}...`; nextBtn.classList.add('bg-yellow-500'); await new Promise(r => setTimeout(r, 1000)); }
                         nextBtn.classList.remove('bg-yellow-500'); nextBtn.classList.add('bg-green-600');
                     }
                 }

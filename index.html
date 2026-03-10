@@ -20,8 +20,13 @@
         .main-img { border-color: #3b82f6 !important; border-width: 4px !important; }
         .loader { display: inline-block; border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #3b82f6; width: 20px; height: 20px; animation: spin 1s linear infinite; margin-left: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .list-item { display: flex; items-center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
+        .list-item { display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
         .list-item:hover { background-color: #f3f4f6; }
+        /* Style for ContentEditable Rich Text Editor */
+        #scEditor table { border-collapse: collapse; width: 100%; font-size: 13px; }
+        #scEditor td, #scEditor th { border: 1px solid #ddd; padding: 6px; }
+        #scEditor img { max-width: 100%; height: auto; }
+        #scEditor:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -30,53 +35,44 @@
         
         <div id="step1" class="space-y-6">
             <h3 class="text-xl font-bold text-gray-700 mb-2">Step 1: Target Destination</h3>
-            <p class="text-sm text-gray-500 mb-4">Select the collections and tags that will be applied to all imported products.</p>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="relative">
                     <label class="block text-sm font-bold text-gray-700 mb-2">Target Collections</label>
-                    <button id="colDropdownBtn" type="button" class="w-full bg-white border border-gray-300 p-3 rounded-lg flex justify-between items-center text-gray-700 hover:border-blue-500 focus:outline-none transition">
+                    <button id="colDropdownBtn" type="button" class="w-full bg-white border border-gray-300 p-3 rounded-lg flex justify-between items-center text-gray-700 hover:border-blue-500 transition">
                         <span id="colDropdownText" class="truncate font-medium">Select Collections</span>
                         <span class="text-xs text-gray-400">▼</span>
                     </button>
                     <div id="colDropdownMenu" class="dropdown-menu">
                         <input type="text" id="colSearch" placeholder="Search collections..." class="w-full p-3 border-b border-gray-200 focus:outline-none text-sm">
-                        <div id="colList" class="max-h-60 overflow-y-auto p-2">
-                            <p class="text-sm text-gray-500 italic p-2">Loading all collections...</p>
-                        </div>
+                        <div id="colList" class="max-h-60 overflow-y-auto p-2"><p class="text-sm text-gray-500 italic p-2">Loading...</p></div>
                     </div>
                     <div id="selectedColsContainer" class="flex flex-wrap gap-2 mt-3"></div>
                 </div>
 
                 <div class="relative">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Global Tags (Multi-select)</label>
-                    <button id="tagDropdownBtn" type="button" class="w-full bg-white border border-gray-300 p-3 rounded-lg flex justify-between items-center text-gray-700 hover:border-blue-500 focus:outline-none transition">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Global Tags</label>
+                    <button id="tagDropdownBtn" type="button" class="w-full bg-white border border-gray-300 p-3 rounded-lg flex justify-between items-center text-gray-700 hover:border-blue-500 transition">
                         <span id="tagDropdownText" class="truncate font-medium">Select Tags</span>
                         <span class="text-xs text-gray-400">▼</span>
                     </button>
                     <div id="tagDropdownMenu" class="dropdown-menu">
                         <input type="text" id="tagSearch" placeholder="Search or add custom tag (Press Enter)" class="w-full p-3 border-b border-gray-200 focus:outline-none text-sm">
-                        <div id="tagList" class="max-h-60 overflow-y-auto p-2">
-                            <p class="text-sm text-gray-500 italic p-2">Loading tags from store...</p>
-                        </div>
+                        <div id="tagList" class="max-h-60 overflow-y-auto p-2"><p class="text-sm text-gray-500 italic p-2">Loading...</p></div>
                     </div>
                     <div id="selectedTagsContainer" class="flex flex-wrap gap-2 mt-3"></div>
                 </div>
             </div>
 
             <div class="mt-8 flex justify-end border-t pt-6">
-                <button onclick="goToStep2()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:scale-105">
-                    Next Step ➔
-                </button>
+                <button onclick="goToStep2()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:scale-105">Next Step ➔</button>
             </div>
         </div>
 
         <div id="step2" class="hidden space-y-6">
             <div class="flex justify-between items-center border-b pb-4 mb-4">
                 <h3 class="text-xl font-bold text-gray-700">Step 2: Fetch & Import</h3>
-                <button onclick="goToStep1()" class="text-sm text-blue-600 hover:underline font-semibold">
-                    ← Back to Settings
-                </button>
+                <button onclick="goToStep1()" class="text-sm text-blue-600 hover:underline font-semibold">← Back to Settings</button>
             </div>
 
             <div class="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-8">
@@ -90,56 +86,22 @@
             </div>
 
             <div id="bulkEditSection" class="hidden bg-gray-100 p-5 rounded-lg border border-gray-200 mb-6 flex flex-wrap gap-4 items-end shadow-sm">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Title</label>
-                    <input type="text" id="globalTitle" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-48" placeholder="Product Title">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Price</label>
-                    <input type="number" step="0.01" id="globalPrice" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-32" placeholder="0.00">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global SKU</label>
-                    <input type="text" id="globalSku" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-48" placeholder="SKU-ALL">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Vendor</label>
-                    <input type="text" id="globalVendor" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-48" placeholder="Vendor Name">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Qty</label>
-                    <input type="number" id="globalQty" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-32" placeholder="0">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Type</label>
-                    <input type="text" id="globalType" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-48" placeholder="Product Type">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Apply Global Status</label>
-                    <select id="globalStatus" class="p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-32">
-                        <option value="">-- Select --</option>
-                        <option value="active">Active</option>
-                        <option value="draft">Draft</option>
-                    </select>
-                </div>
-                <div class="flex flex-col justify-end pb-1">
-                    <span id="loadedProductsCount" class="text-sm font-bold text-gray-700 bg-blue-100 px-3 py-2 rounded border border-blue-200">Loaded Products: 0</span>
-                </div>
-                <div class="flex gap-2 flex-wrap items-center">
-                    <button onclick="applyGlobalSettings()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded shadow transition">
-                        Apply to All
-                    </button>
-                    <button onclick="applyGlobalMoveToType()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded shadow transition" title="Move all existing Product Titles to Type and clear Title boxes">
-                        Move All Titles to Type ➔
-                    </button>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Title</label><input type="text" id="globalTitle" class="p-3 border border-gray-300 rounded w-48"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Price</label><input type="number" step="0.01" id="globalPrice" class="p-3 border border-gray-300 rounded w-32"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Global SKU</label><input type="text" id="globalSku" class="p-3 border border-gray-300 rounded w-48"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Vendor</label><input type="text" id="globalVendor" class="p-3 border border-gray-300 rounded w-48"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Qty</label><input type="number" id="globalQty" class="p-3 border border-gray-300 rounded w-32"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Type</label><input type="text" id="globalType" class="p-3 border border-gray-300 rounded w-48"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Status</label><select id="globalStatus" class="p-3 border border-gray-300 rounded w-32"><option value="">-- Select --</option><option value="active">Active</option><option value="draft">Draft</option></select></div>
+                
+                <div class="flex flex-col justify-end pb-1"><span id="loadedProductsCount" class="text-sm font-bold text-gray-700 bg-blue-100 px-3 py-2 rounded border border-blue-200">Loaded: 0</span></div>
+                
+                <div class="flex gap-2 flex-wrap items-center w-full mt-2">
+                    <button onclick="applyGlobalSettings()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded shadow transition">Apply to All</button>
+                    <button onclick="applyGlobalMoveToType()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded shadow transition">Move All Titles to Type ➔</button>
                     <div class="ml-auto flex items-center gap-4 bg-white p-2 rounded border border-gray-300 shadow-sm">
-                        <label class="flex items-center space-x-2 cursor-pointer text-sm font-bold text-gray-800">
-                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="w-5 h-5 text-blue-600 rounded cursor-pointer border-gray-300 focus:ring-blue-500">
-                            <span>Select All</span>
-                        </label>
-                        <button id="bulkUploadBtn" onclick="startBulkUpload()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded shadow-lg transition transform hover:scale-105">
-                            Upload Selected Products
-                        </button>
+                        <label class="flex items-center space-x-2 cursor-pointer text-sm font-bold text-gray-800"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="w-5 h-5 text-blue-600 rounded"><span>Select All</span></label>
+                        <button id="bulkUploadBtn" onclick="startBulkUpload()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded shadow-lg transition transform hover:scale-105">Upload Selected</button>
                     </div>
                 </div>
             </div>
@@ -147,676 +109,452 @@
             <div id="productContainer"></div>
 
             <div id="loadMoreDiv" class="hidden text-center mt-8 border-t pt-8">
-                <button onclick="loadNextBatch()" id="loadMoreBtn" class="bg-gray-800 hover:bg-gray-900 text-white font-bold px-10 py-4 rounded-lg shadow-md flex items-center justify-center transition mx-auto text-lg">
-                    Load More Products
-                </button>
+                <button onclick="loadNextBatch()" id="loadMoreBtn" class="bg-gray-800 hover:bg-gray-900 text-white font-bold px-10 py-4 rounded-lg shadow-md flex items-center justify-center transition mx-auto text-lg">Load More Products</button>
             </div>
-
         </div>
     </div>
 
     <div id="imageModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-80 flex justify-center items-center backdrop-blur-sm">
-        <span onclick="closeImageModal()" class="absolute top-5 right-8 text-white text-5xl cursor-pointer hover:text-gray-300 transition">&times;</span>
-        <img id="modalImage" src="" class="max-w-[90vw] max-h-[90vh] rounded shadow-2xl border-4 border-white object-contain">
+        <span onclick="closeImageModal()" class="absolute top-5 right-8 text-white text-5xl cursor-pointer">&times;</span>
+        <img id="modalImage" src="" class="max-w-[90vw] max-h-[90vh] rounded border-4 border-white object-contain">
     </div>
 
-    <div id="htmlModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-60 flex justify-center items-center backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-4xl max-h-[90vh] rounded-lg shadow-2xl flex flex-col">
+    <div id="htmlModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-60 flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] rounded-lg flex flex-col">
             <div class="flex justify-between items-center p-4 border-b">
-                <h3 class="text-xl font-bold text-gray-800">HTML Preview</h3>
-                <span onclick="closeHtmlModal()" class="text-gray-500 text-3xl cursor-pointer hover:text-red-500 transition leading-none">&times;</span>
+                <h3 class="text-xl font-bold">HTML Preview</h3><span onclick="closeHtmlModal()" class="text-3xl cursor-pointer text-red-500">&times;</span>
             </div>
             <div id="htmlModalContent" class="p-6 overflow-y-auto flex-1 text-sm text-gray-800"></div>
+        </div>
+    </div>
+
+    <div id="sizeChartModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-60 flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-3xl rounded-lg flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-xl font-bold text-indigo-700">📏 Create Size Chart (Hidden Page)</h3>
+                <span onclick="closeSizeChartModal()" class="text-3xl cursor-pointer text-gray-500 hover:text-red-500 transition">&times;</span>
+            </div>
+            <div class="p-6">
+                <p class="text-xs text-gray-500 mb-4 bg-gray-50 p-2 rounded">Pages created here are automatically saved to Shopify as "Hidden" so they don't appear in store search results.</p>
+                
+                <label class="block text-sm font-bold mb-1">Page Title</label>
+                <input type="text" id="scTitle" class="w-full p-3 border rounded mb-4" placeholder="e.g. Size Chart - Red Dress">
+                
+                <label class="block text-sm font-bold mb-1">Content (Copy-paste table directly or insert image)</label>
+                <div class="flex gap-2 mb-2 bg-gray-100 p-2 rounded border border-b-0 rounded-b-none">
+                    <button onclick="document.execCommand('bold',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm font-bold hover:bg-gray-50">B</button>
+                    <button onclick="document.execCommand('italic',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm italic hover:bg-gray-50">I</button>
+                    <button onclick="insertImagePrompt()" class="px-3 py-1 bg-white border rounded shadow-sm text-sm hover:bg-gray-50 font-bold text-blue-600">🖼️ Insert Image Link</button>
+                    <button onclick="document.execCommand('removeFormat',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm text-sm hover:bg-gray-50 ml-auto">Clear Format</button>
+                </div>
+                <div id="scEditor" contenteditable="true" class="w-full p-3 border border-t-0 rounded rounded-t-none h-64 overflow-y-auto bg-white mb-4" placeholder="Paste your table or type here..."></div>
+                
+                <button id="scSaveBtn" onclick="saveSizeChart()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded text-lg shadow">Save & Apply to Product</button>
+            </div>
         </div>
     </div>
 
     <script>
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbywFzQu0m-wMkHFGAAy7irzlX20ixCBUqXEQfpmhlqNhG_Fa3113c9ufOvJxheDbUEO/exec"; 
         
-        let allCollections = [];
-        let storeTags = [];
-        let selectedCollections = [];
-        let selectedTags = [];
-        
-        // Variables for Smart Pagination (Load More)
-        let currentProducts = [];
-        let allHandles = [];
-        let loadedCount = 0;
-        let vendorBaseUrl = "";
+        let allCollections = [], storeTags = [], storePages = [];
+        let selectedCollections = [], selectedTags = [];
+        let currentProducts = [], allHandles = [], loadedCount = 0, vendorBaseUrl = "";
         const BATCH_SIZE = 10; 
+        
+        let targetSizeChartIndex = null; // To track which product opened the modal
 
         document.addEventListener('DOMContentLoaded', loadStoreData);
-
-
- function toggleSelectAll() {
-            const isChecked = document.getElementById('selectAllCheckbox').checked;
-            const checkboxes = document.querySelectorAll('.product-select-checkbox');
-            checkboxes.forEach(cb => cb.checked = isChecked);
-        }
-
-        // Error message show korar notun function ekhane add kora holo
-        function showCardError(index, msg) {
-            const card = document.getElementById(`card-${index}`);
-            if (!card) return;
-            let errDiv = document.getElementById(`err-${index}`);
-            if (!errDiv) {
-                errDiv = document.createElement('div');
-                errDiv.id = `err-${index}`;
-                errDiv.className = "mt-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 font-medium text-sm rounded shadow-sm";
-                card.appendChild(errDiv);
-            }
-            errDiv.innerText = msg;
-        }
-
-        let isBulkUploading = false;
-
-        async function startBulkUpload() {
-            if (isBulkUploading) return;
-            
-            const selectedCheckboxes = document.querySelectorAll('.product-select-checkbox:checked');
-            if (selectedCheckboxes.length === 0) {
-                alert("Please select at least one product to upload.");
-                return;
-            }
-
-            const activeCards = Array.from(selectedCheckboxes).map(cb => cb.closest('.product-card'));
-
-            isBulkUploading = true;
-            const bulkBtn = document.getElementById('bulkUploadBtn');
-            const originalBtnText = bulkBtn.innerText;
-            bulkBtn.innerText = "Processing Selected...";
-            bulkBtn.classList.replace('bg-green-600', 'bg-gray-600');
-            bulkBtn.disabled = true;
-
-            for (let i = 0; i < activeCards.length; i++) {
-                const card = activeCards[i];
-                if (!document.body.contains(card)) continue;
-
-                const index = card.id.split('-')[1];
-                const btn = document.getElementById(`upBtn-${index}`);
-                
-                if (!btn || btn.disabled) continue;
-
-                await uploadToShopify(index);
-
-                let nextCardIndex = -1;
-                for (let j = i + 1; j < activeCards.length; j++) {
-                    if (document.body.contains(activeCards[j])) {
-                        nextCardIndex = j;
-                        break;
-                    }
-                }
-
-                if (nextCardIndex !== -1) {
-                    const nextCard = activeCards[nextCardIndex];
-                    const nextIndex = nextCard.id.split('-')[1];
-                    const nextBtn = document.getElementById(`upBtn-${nextIndex}`);
-                    
-                    if (nextBtn && !nextBtn.disabled) {
-                        for (let t = 7; t > 0; t--) {
-                            nextBtn.innerText = `Uploading in ${t}...`;
-                            nextBtn.classList.remove('bg-green-600', 'bg-red-600');
-                            nextBtn.classList.add('bg-yellow-500');
-                            await new Promise(r => setTimeout(r, 1000));
-                        }
-                        nextBtn.classList.remove('bg-yellow-500');
-                        nextBtn.classList.add('bg-green-600');
-                    }
-                }
-            }
-
-            isBulkUploading = false;
-            bulkBtn.innerText = originalBtnText;
-            bulkBtn.classList.replace('bg-gray-600', 'bg-green-600');
-            bulkBtn.disabled = false;
-            
-            const selectAllCb = document.getElementById('selectAllCheckbox');
-            if(selectAllCb) selectAllCb.checked = false;
-        }
-
 
         async function loadStoreData() {
             try {
                 const res = await fetch(WEB_APP_URL + "?action=getStoreData");
                 const data = await res.json();
                 if(data.status === "success") {
-                    allCollections = data.collections;
-                    storeTags = data.tags;
-                    renderColList();
-                    renderTagList();
+                    allCollections = data.collections; storeTags = data.tags; storePages = data.pages;
+                    renderColList(); renderTagList();
                 }
             } catch (e) { console.error("API Error", e); }
         }
 
-        function goToStep2() {
-            document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.remove('hidden');
+        // Rich Text Editor Image Insert
+        function insertImagePrompt() {
+            const url = prompt("Enter the Image Address/URL:");
+            if (url) {
+                document.execCommand('insertImage', false, url);
+            }
         }
 
-        function goToStep1() {
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('step1').classList.remove('hidden');
+        function openSizeChartModal(index) { 
+            targetSizeChartIndex = index;
+            document.getElementById('sizeChartModal').classList.remove('hidden'); 
+            const defaultTitle = document.getElementById(`title-${index}`).value;
+            document.getElementById('scTitle').value = defaultTitle ? "Size Chart - " + defaultTitle : "Size Chart - ";
+            document.getElementById('scEditor').innerHTML = ""; // Clear editor
+            document.getElementById('scEditor').focus();
+        }
+        
+        function closeSizeChartModal() { document.getElementById('sizeChartModal').classList.add('hidden'); targetSizeChartIndex = null; }
+        
+        async function saveSizeChart() {
+            const title = document.getElementById('scTitle').value.trim();
+            const html = document.getElementById('scEditor').innerHTML.trim(); // Get Rich Text HTML
+            if(!title || !html || html === "<br>") return alert("Title and Content are required.");
+            
+            const btn = document.getElementById('scSaveBtn');
+            btn.innerText = "Saving to Shopify..."; btn.disabled = true;
+            
+            try {
+                const res = await (await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action: "createPage", title: title, body_html: html}) })).json();
+                if(res.status === "success") {
+                    storePages.unshift(res.page); // Add new page to top of array
+                    
+                    // Update all dropdowns on the page without resetting their current selected values
+                    document.querySelectorAll('.size-chart-dropdown').forEach(select => {
+                        const currentVal = select.value;
+                        const optionsHtml = storePages.map(p => `<option value="${p.handle}">${escapeHtml(p.title)}</option>`).join('');
+                        select.innerHTML = '<option value="">-- No Size Chart --</option>' + optionsHtml;
+                        select.value = currentVal;
+                    });
+
+                    // Auto select for the specific product that triggered the modal
+                    if(targetSizeChartIndex !== null) {
+                        const targetDropdown = document.getElementById(`sizeChart-${targetSizeChartIndex}`);
+                        if(targetDropdown) targetDropdown.value = res.page.handle;
+                    }
+                    
+                    closeSizeChartModal();
+                } else { alert("Error: " + res.message); }
+            } catch (e) { alert("Network Error"); }
+            btn.innerText = "Save & Apply to Product"; btn.disabled = false;
         }
 
-        const setupDropdown = (btnId, menuId) => {
-            document.getElementById(btnId).addEventListener('click', (e) => {
-                e.stopPropagation();
-                closeAllMenus();
-                document.getElementById(menuId).classList.toggle('show');
-            });
-        };
-
-        setupDropdown('colDropdownBtn', 'colDropdownMenu');
-        setupDropdown('tagDropdownBtn', 'tagDropdownMenu');
-
-        function closeAllMenus() {
-            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        // Add Variant Logic (Auto-fills price/sku/qty from the main fields)
+        function addVariantRow(pIdx) {
+            const container = document.getElementById(`variants-${pIdx}`);
+            const basePrice = document.getElementById(`price-${pIdx}`).value;
+            const baseSku = document.getElementById(`sku-${pIdx}`).value;
+            const baseQty = document.getElementById(`qty-${pIdx}`).value || "0";
+            
+            const row = document.createElement('div');
+            row.className = "flex gap-2 items-center variant-row mt-2 bg-white p-2 border rounded shadow-sm";
+            row.innerHTML = `
+                <input type="text" placeholder="Value (e.g. XL)" class="var-val p-2 border border-gray-300 rounded w-1/4 text-sm font-bold focus:border-blue-500 outline-none">
+                <input type="number" step="0.01" placeholder="Price" class="var-price p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${basePrice}">
+                <input type="text" placeholder="SKU" class="var-sku p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${baseSku}">
+                <input type="number" placeholder="Qty" class="var-qty p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${baseQty}">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-500 font-bold hover:text-red-700 bg-red-50 px-3 py-1 rounded">✖</button>
+            `;
+            container.appendChild(row);
         }
 
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.relative')) closeAllMenus();
-        });
+        // UI & Navigation
+        function goToStep2() { document.getElementById('step1').classList.add('hidden'); document.getElementById('step2').classList.remove('hidden'); }
+        function goToStep1() { document.getElementById('step2').classList.add('hidden'); document.getElementById('step1').classList.remove('hidden'); }
+        const setupDropdown = (b, m) => document.getElementById(b).addEventListener('click', e => { e.stopPropagation(); closeAllMenus(); document.getElementById(m).classList.toggle('show'); });
+        setupDropdown('colDropdownBtn', 'colDropdownMenu'); setupDropdown('tagDropdownBtn', 'tagDropdownMenu');
+        function closeAllMenus() { document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show')); }
+        document.addEventListener('click', e => { if (!e.target.closest('.relative')) closeAllMenus(); });
 
         function renderColList(filterText = "") {
-            const container = document.getElementById('colList');
-            container.innerHTML = "";
-            
+            const container = document.getElementById('colList'); container.innerHTML = "";
             const lowerFilter = filterText.toLowerCase();
-            let filtered = [];
-            
-            if (lowerFilter === "") {
-                filtered = allCollections;
-            } else {
-                const exactMatch = [];
-                const startsWithMatch = [];
-                const includesMatch = [];
-                
-                allCollections.forEach(c => {
-                    const titleLower = c.title.toLowerCase();
-                    if (titleLower === lowerFilter) exactMatch.push(c);
-                    else if (titleLower.startsWith(lowerFilter)) startsWithMatch.push(c);
-                    else if (titleLower.includes(lowerFilter)) includesMatch.push(c);
-                });
-                
-                filtered = [...exactMatch, ...startsWithMatch, ...includesMatch];
-            }
-            
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-sm text-gray-500 p-2">No match found.</p>`;
-                return;
-            }
-
+            const filtered = filterText === "" ? allCollections : allCollections.filter(c => c.title.toLowerCase().includes(lowerFilter));
+            if(filtered.length === 0) return container.innerHTML = `<p class="p-2">No match</p>`;
             filtered.forEach(c => {
                 const isChecked = selectedCollections.includes(c.id);
-                const badge = c.type === 'smart' ? `<span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 rounded ml-2">Automated</span>` : `<span class="text-[10px] bg-green-100 text-green-800 px-1 rounded ml-2">Custom</span>`;
-                const label = document.createElement('label');
-                label.className = "list-item flex items-center space-x-3";
-                label.innerHTML = `<input type="checkbox" value="${c.id}" class="col-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><span class="text-sm font-medium">${escapeHtml(c.title)} ${badge}</span>`;
-                label.querySelector('input').addEventListener('change', (e) => handleColSelection(c.id, e.target.checked));
+                const badge = c.type === 'smart' ? `<span class="bg-indigo-100 text-indigo-800 px-1 rounded ml-2">Auto</span>` : `<span class="bg-green-100 text-green-800 px-1 rounded ml-2">Custom</span>`;
+                const label = document.createElement('label'); label.className = "list-item flex items-center space-x-3";
+                label.innerHTML = `<input type="checkbox" value="${c.id}" class="col-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked?'checked':''}><span class="text-sm font-medium">${escapeHtml(c.title)} ${badge}</span>`;
+                label.querySelector('input').addEventListener('change', e => handleColSelection(c.id, e.target.checked));
                 container.appendChild(label);
             });
         }
-
         function handleColSelection(id, isChecked) {
-            if (isChecked) {
-                if (!selectedCollections.includes(id)) selectedCollections.push(id);
-            } else {
-                selectedCollections = selectedCollections.filter(cId => cId !== id);
-            }
+            if (isChecked) { if (!selectedCollections.includes(id)) selectedCollections.push(id); } else { selectedCollections = selectedCollections.filter(cId => cId !== id); }
             document.getElementById('colDropdownText').innerText = selectedCollections.length > 0 ? `${selectedCollections.length} Collection(s)` : "Select Collections";
             updateSelectedColsUI();
-            
-            const checkboxes = document.querySelectorAll('.col-checkbox');
-            checkboxes.forEach(cb => {
-                if (cb.value == id) cb.checked = isChecked;
-            });
+            document.querySelectorAll('.col-checkbox').forEach(cb => { if(cb.value == id) cb.checked = isChecked; });
         }
-
         function updateSelectedColsUI() {
-            const container = document.getElementById('selectedColsContainer');
-            if(!container) return;
-            container.innerHTML = "";
+            const container = document.getElementById('selectedColsContainer'); container.innerHTML = "";
             selectedCollections.forEach(id => {
                 const collection = allCollections.find(c => c.id === id);
-                if(collection) {
-                    const chip = document.createElement('span');
-                    chip.className = "inline-flex items-center bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded border border-blue-200";
-                    chip.innerHTML = `${escapeHtml(collection.title)} <button type="button" onclick="handleColSelection(${id}, false)" class="ml-2 text-blue-500 hover:text-blue-900 focus:outline-none text-lg leading-none">&times;</button>`;
-                    container.appendChild(chip);
-                }
+                if(collection) container.innerHTML += `<span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded border border-blue-200">${escapeHtml(collection.title)} <button onclick="handleColSelection(${id}, false)" class="ml-2 text-lg leading-none">&times;</button></span>`;
             });
         }
 
         function renderTagList(filterText = "") {
-            const container = document.getElementById('tagList');
-            container.innerHTML = "";
+            const container = document.getElementById('tagList'); container.innerHTML = "";
             const uniqueTags = [...new Set([...storeTags, ...selectedTags])];
-            
             const lowerFilter = filterText.toLowerCase();
-            let filtered = [];
-            
-            if (lowerFilter === "") {
-                filtered = uniqueTags;
-            } else {
-                const exactMatch = [];
-                const startsWithMatch = [];
-                const includesMatch = [];
-                
-                uniqueTags.forEach(t => {
-                    const tagLower = t.toLowerCase();
-                    if (tagLower === lowerFilter) exactMatch.push(t);
-                    else if (tagLower.startsWith(lowerFilter)) startsWithMatch.push(t);
-                    else if (tagLower.includes(lowerFilter)) includesMatch.push(t);
-                });
-                
-                filtered = [...exactMatch, ...startsWithMatch, ...includesMatch];
-            }
-            
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-sm text-gray-500 p-2">Press Enter to add custom tag.</p>`;
-                return;
-            }
-
+            const filtered = filterText === "" ? uniqueTags : uniqueTags.filter(t => t.toLowerCase().includes(lowerFilter));
+            if (filtered.length === 0) return container.innerHTML = `<p class="p-2">Press Enter to add.</p>`;
             filtered.forEach(t => {
                 const isChecked = selectedTags.includes(t);
-                const label = document.createElement('label');
-                label.className = "list-item flex items-center space-x-3";
-                label.innerHTML = `<input type="checkbox" value="${escapeHtml(t)}" class="tag-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><span class="text-sm font-medium">${escapeHtml(t)}</span>`;
-                label.querySelector('input').addEventListener('change', (e) => handleTagSelection(t, e.target.checked));
+                const label = document.createElement('label'); label.className = "list-item flex items-center space-x-3";
+                label.innerHTML = `<input type="checkbox" value="${escapeHtml(t)}" class="tag-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked?'checked':''}><span class="text-sm font-medium">${escapeHtml(t)}</span>`;
+                label.querySelector('input').addEventListener('change', e => handleTagSelection(t, e.target.checked));
                 container.appendChild(label);
             });
         }
-
         function handleTagSelection(tag, isChecked) {
-            if (isChecked) {
-                if (!selectedTags.includes(tag)) selectedTags.push(tag);
-            } else {
-                selectedTags = selectedTags.filter(t => t !== tag);
-            }
-            document.getElementById('tagDropdownText').innerText = selectedTags.length > 0 ? `${selectedTags.length} Tag(s) Selected` : "Select Tags";
+            if (isChecked) { if (!selectedTags.includes(tag)) selectedTags.push(tag); } else { selectedTags = selectedTags.filter(t => t !== tag); }
+            document.getElementById('tagDropdownText').innerText = selectedTags.length > 0 ? `${selectedTags.length} Tag(s)` : "Select Tags";
             updateSelectedTagsUI();
-            
-            const checkboxes = document.querySelectorAll('.tag-checkbox');
-            checkboxes.forEach(cb => {
-                if (cb.value === escapeHtml(tag)) cb.checked = isChecked;
-            });
+            document.querySelectorAll('.tag-checkbox').forEach(cb => { if(cb.value === escapeHtml(tag)) cb.checked = isChecked; });
         }
-
         function updateSelectedTagsUI() {
-            const container = document.getElementById('selectedTagsContainer');
-            if(!container) return;
-            container.innerHTML = "";
+            const container = document.getElementById('selectedTagsContainer'); container.innerHTML = "";
             selectedTags.forEach(tag => {
-                const chip = document.createElement('span');
-                chip.className = "inline-flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-1 rounded border border-green-200";
                 const safeTag = escapeHtml(tag).replace(/'/g, "\\'");
-                chip.innerHTML = `${escapeHtml(tag)} <button type="button" onclick="handleTagSelection('${safeTag}', false)" class="ml-2 text-green-600 hover:text-green-900 focus:outline-none text-lg leading-none">&times;</button>`;
-                container.appendChild(chip);
+                container.innerHTML += `<span class="inline-flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-1 rounded border border-green-200">${escapeHtml(tag)} <button onclick="handleTagSelection('${safeTag}', false)" class="ml-2 text-lg leading-none">&times;</button></span>`;
             });
         }
-
-        document.getElementById('colSearch').addEventListener('input', (e) => renderColList(e.target.value));
-        document.getElementById('tagSearch').addEventListener('input', (e) => renderTagList(e.target.value));
-
-        document.getElementById('tagSearch').addEventListener('keypress', (e) => {
+        document.getElementById('colSearch').addEventListener('input', e => renderColList(e.target.value));
+        document.getElementById('tagSearch').addEventListener('input', e => renderTagList(e.target.value));
+        document.getElementById('tagSearch').addEventListener('keypress', e => {
             if (e.key === 'Enter') {
-                e.preventDefault();
-                const newTag = e.target.value.trim();
-                if (newTag && !selectedTags.includes(newTag)) {
-                    selectedTags.push(newTag);
-                    if (!storeTags.includes(newTag)) storeTags.push(newTag);
-                    handleTagSelection(newTag, true);
-                    e.target.value = '';
-                    renderTagList();
-                }
+                e.preventDefault(); const newTag = e.target.value.trim();
+                if (newTag && !selectedTags.includes(newTag)) { selectedTags.push(newTag); if (!storeTags.includes(newTag)) storeTags.push(newTag); handleTagSelection(newTag, true); e.target.value = ''; renderTagList(); }
             }
         });
 
-        // Smart Pagination: Initial Fetch (Handles Only)
+        function toggleSelectAll() { const isChecked = document.getElementById('selectAllCheckbox').checked; document.querySelectorAll('.product-select-checkbox').forEach(cb => cb.checked = isChecked); }
+        function showCardError(index, msg) {
+            let errDiv = document.getElementById(`err-${index}`);
+            if (!errDiv) { errDiv = document.createElement('div'); errDiv.id = `err-${index}`; errDiv.className = "mt-4 p-4 bg-red-50 text-red-700 font-medium rounded"; document.getElementById(`card-${index}`).appendChild(errDiv); }
+            errDiv.innerText = msg;
+        }
+
+        let isBulkUploading = false;
+        async function startBulkUpload() {
+            if (isBulkUploading) return;
+            const cbs = document.querySelectorAll('.product-select-checkbox:checked');
+            if (cbs.length === 0) return alert("Select at least one product.");
+            const activeCards = Array.from(cbs).map(cb => cb.closest('.product-card'));
+            isBulkUploading = true;
+            const bulkBtn = document.getElementById('bulkUploadBtn');
+            const originalText = bulkBtn.innerText;
+            bulkBtn.innerText = "Processing..."; bulkBtn.classList.replace('bg-green-600', 'bg-gray-600'); bulkBtn.disabled = true;
+
+            for (let i = 0; i < activeCards.length; i++) {
+                if (!document.body.contains(activeCards[i])) continue;
+                const index = activeCards[i].id.split('-')[1];
+                const btn = document.getElementById(`upBtn-${index}`);
+                if (!btn || btn.disabled) continue;
+                await uploadToShopify(index);
+
+                let nextCardIndex = activeCards.findIndex((c, j) => j > i && document.body.contains(c));
+                if (nextCardIndex !== -1) {
+                    const nextBtn = document.getElementById(`upBtn-${activeCards[nextCardIndex].id.split('-')[1]}`);
+                    if (nextBtn && !nextBtn.disabled) {
+                        for (let t = 7; t > 0; t--) { nextBtn.innerText = `Uploading in ${t}...`; nextBtn.classList.add('bg-yellow-500'); await new Promise(r => setTimeout(r, 1000)); }
+                        nextBtn.classList.remove('bg-yellow-500'); nextBtn.classList.add('bg-green-600');
+                    }
+                }
+            }
+            isBulkUploading = false; bulkBtn.innerText = originalText; bulkBtn.classList.replace('bg-gray-600', 'bg-green-600'); bulkBtn.disabled = false;
+            document.getElementById('selectAllCheckbox').checked = false;
+        }
+
         async function fetchCollection() {
             const urlInput = document.getElementById('collectionUrl').value.trim();
-            if(!urlInput) return alert("Please enter a valid URL.");
-            
-            const btn = document.getElementById('loadBtn');
-            const spinner = document.getElementById('spinner');
-            const container = document.getElementById('productContainer');
-            const loadMoreDiv = document.getElementById('loadMoreDiv');
-            
-            btn.disabled = true; 
-            spinner.style.display = "inline-block";
-            
-            container.innerHTML = `<div class="text-center py-10 text-gray-600 font-bold animate-pulse text-lg">Scanning vendor website for products... Please wait.</div>`;
-            document.getElementById('bulkEditSection').classList.add('hidden');
-            loadMoreDiv.classList.add('hidden');
+            if(!urlInput) return alert("Enter URL");
+            document.getElementById('loadBtn').disabled = true; document.getElementById('spinner').style.display = "inline-block";
+            document.getElementById('productContainer').innerHTML = `<div class="text-center py-10 font-bold animate-pulse text-lg">Scanning... Please wait.</div>`;
+            document.getElementById('bulkEditSection').classList.add('hidden'); document.getElementById('loadMoreDiv').classList.add('hidden');
 
             try {
                 const response = await fetch(`${WEB_APP_URL}?action=fetchCollectionHandles&url=${encodeURIComponent(urlInput)}`);
                 const data = await response.json();
-                
                 if(data.status === "success") {
-                    allHandles = data.handles;
-                    vendorBaseUrl = data.baseUrl;
-                    loadedCount = 0;
-                    currentProducts = [];
-                    container.innerHTML = "";
-                    
+                    allHandles = data.handles; vendorBaseUrl = data.baseUrl; loadedCount = 0; currentProducts = [];
+                    document.getElementById('productContainer').innerHTML = "";
                     document.getElementById('bulkEditSection').classList.remove('hidden');
-                    
-                    // Trigger the first batch load
                     await loadNextBatch();
-                } else {
-                    container.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-xl">Error: ${data.message}</div>`;
-                }
-            } catch (e) { 
-                container.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-xl">Network Architecture Error.</div>`; 
-            } finally { 
-                btn.disabled = false; 
-                spinner.style.display = "none"; 
-            }
+                } else { document.getElementById('productContainer').innerHTML = `<div class="text-red-500 font-bold py-10 text-center">${data.message}</div>`; }
+            } catch (e) { document.getElementById('productContainer').innerHTML = `<div class="text-red-500 font-bold py-10 text-center">Error</div>`; }
+            document.getElementById('loadBtn').disabled = false; document.getElementById('spinner').style.display = "none"; 
         }
 
-        // Smart Pagination: Load Details 10 at a time
         async function loadNextBatch() {
-            const loadMoreBtn = document.getElementById('loadMoreBtn');
-            const loadMoreDiv = document.getElementById('loadMoreDiv');
-            
-            loadMoreBtn.disabled = true; 
-            loadMoreBtn.innerText = "Loading details...";
-            
+            const btn = document.getElementById('loadMoreBtn'); btn.disabled = true; btn.innerText = "Loading details...";
             const handlesToLoad = allHandles.slice(loadedCount, loadedCount + BATCH_SIZE);
             if (handlesToLoad.length === 0) return;
-
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=fetchProductBatch&baseUrl=${encodeURIComponent(vendorBaseUrl)}&handles=${encodeURIComponent(handlesToLoad.join(','))}`);
-                const data = await response.json();
-                
+                const res = await fetch(`${WEB_APP_URL}?action=fetchProductBatch&baseUrl=${encodeURIComponent(vendorBaseUrl)}&handles=${encodeURIComponent(handlesToLoad.join(','))}`);
+                const data = await res.json();
                 if(data.status === "success") {
-                    appendProducts(data.products); // Append to DOM without resetting previous cards
-                    loadedCount += handlesToLoad.length;
-                    
+                    appendProducts(data.products); loadedCount += handlesToLoad.length;
                     const remaining = allHandles.length - loadedCount;
-                    if (remaining > 0) {
-                        loadMoreDiv.classList.remove('hidden');
-                        loadMoreBtn.innerText = `Load More Products (Remaining: ${remaining})`;
-                    } else {
-                        loadMoreDiv.classList.add('hidden');
-                    }
-                } else {
-                    alert("Error loading batch: " + data.message);
-                }
-            } catch (e) {
-                alert("Network error while loading batch.");
-            } finally {
-                loadMoreBtn.disabled = false;
-            }
+                    if (remaining > 0) { document.getElementById('loadMoreDiv').classList.remove('hidden'); btn.innerText = `Load More (${remaining})`; } 
+                    else { document.getElementById('loadMoreDiv').classList.add('hidden'); }
+                } else alert("Error: " + data.message);
+            } catch (e) { alert("Network error"); }
+            btn.disabled = false;
         }
 
         function applyGlobalSettings() {
-            const title = document.getElementById('globalTitle').value;
-            const price = document.getElementById('globalPrice').value;
-            const sku = document.getElementById('globalSku').value;
-            const vendor = document.getElementById('globalVendor').value;
-            const qty = document.getElementById('globalQty').value;
-            const type = document.getElementById('globalType').value;
-            const status = document.getElementById('globalStatus').value;
-            
-            currentProducts.forEach((p, idx) => {
-                // Ensure we only apply to cards that exist (haven't been uploaded and hidden)
+            const t = document.getElementById('globalTitle').value, p = document.getElementById('globalPrice').value, s = document.getElementById('globalSku').value;
+            const v = document.getElementById('globalVendor').value, q = document.getElementById('globalQty').value, ty = document.getElementById('globalType').value, st = document.getElementById('globalStatus').value;
+            currentProducts.forEach((_, idx) => {
                 if (document.getElementById(`card-${idx}`)) {
-                    if (title) document.getElementById(`title-${idx}`).value = title;
-                    if (price) document.getElementById(`price-${idx}`).value = price;
-                    if (sku) document.getElementById(`sku-${idx}`).value = sku;
-                    if (vendor) document.getElementById(`vendor-${idx}`).value = vendor;
-                    if (qty) document.getElementById(`qty-${idx}`).value = qty;
-                    if (type) document.getElementById(`type-${idx}`).value = type;
-                    if (status) document.getElementById(`status-${idx}`).value = status;
+                    if (t) document.getElementById(`title-${idx}`).value = t; if (p) document.getElementById(`price-${idx}`).value = p;
+                    if (s) document.getElementById(`sku-${idx}`).value = s; if (v) document.getElementById(`vendor-${idx}`).value = v;
+                    if (q) document.getElementById(`qty-${idx}`).value = q; if (ty) document.getElementById(`type-${idx}`).value = ty;
+                    if (st) document.getElementById(`status-${idx}`).value = st;
                 }
             });
         }
 
-        function moveToType(index) {
-            const titleInput = document.getElementById(`title-${index}`);
-            const typeInput = document.getElementById(`type-${index}`);
-            if(titleInput.value.trim() !== "") {
-                typeInput.value = titleInput.value;
-                titleInput.value = "";
-            }
-            titleInput.focus();
-        }
+        function moveToType(index) { const t = document.getElementById(`title-${index}`), y = document.getElementById(`type-${index}`); if(t.value.trim()){ y.value = t.value; t.value = ""; } t.focus(); }
+        function applyGlobalMoveToType() { currentProducts.forEach((_, i) => { if(document.getElementById(`card-${i}`)) moveToType(i); }); }
 
-        function applyGlobalMoveToType() {
-            currentProducts.forEach((p, index) => {
-                if (document.getElementById(`card-${index}`)) {
-                    const titleInput = document.getElementById(`title-${index}`);
-                    const typeInput = document.getElementById(`type-${index}`);
-                    if (titleInput && typeInput && titleInput.value.trim() !== "") {
-                        typeInput.value = titleInput.value;
-                        titleInput.value = "";
-                    }
-                }
-            });
-        }
-
-        // Appends only the newly fetched batch so old edits aren't lost
         function appendProducts(newProducts) {
-            const container = document.getElementById('productContainer');
-            const startIndex = currentProducts.length;
+            const container = document.getElementById('productContainer'); const startIndex = currentProducts.length; currentProducts.push(...newProducts);
             
-            // Push new items to global array to maintain correct index sync
-            currentProducts.push(...newProducts);
-            
-            newProducts.forEach((p, i) => {
-                const index = startIndex + i;
-                const defaultType = p.product_type ? p.product_type : p.title;
+            // Build Pages Dropdown options ONCE for this batch
+            const pagesOptions = storePages.map(p => `<option value="${p.handle}">${escapeHtml(p.title)}</option>`).join('');
 
-                const card = document.createElement('div');
-                card.id = `card-${index}`;
-                card.className = "product-card bg-white shadow-sm hover:shadow-md transition-shadow";
+            newProducts.forEach((p, i) => {
+                const index = startIndex + i; const defaultType = p.product_type || p.title;
+                const card = document.createElement('div'); card.id = `card-${index}`; card.className = "product-card bg-white shadow-sm hover:shadow-md transition";
                 card.innerHTML = `
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         <div class="lg:col-span-8">
                             <div class="flex justify-between items-center mb-1">
-    <label class="flex items-center space-x-2 cursor-pointer block text-sm font-bold text-gray-800 bg-blue-50 px-2 py-1 rounded border border-blue-100">
-        <input type="checkbox" id="select-${index}" class="product-select-checkbox w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
-        <span>Select Product</span>
-    </label>
-    <div class="flex gap-2">
-        <button onclick="moveToType(${index})" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200 transition font-bold" title="Move current title to Product Type and clear title box">
-            Move to Type ➔
-        </button>
-        <button onclick="removeProductCard(${index})" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition font-bold" title="Remove this product from list">
-            ✖ Remove
-        </button>
-    </div>
-</div>
-                            <input type="text" class="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:border-blue-500 font-medium" value="${escapeHtml(p.title)}" id="title-${index}">
-                            
+                                <label class="flex items-center space-x-2 text-sm font-bold bg-blue-50 px-2 py-1 rounded border border-blue-100 cursor-pointer"><input type="checkbox" id="select-${index}" class="product-select-checkbox w-4 h-4 rounded"><span>Select</span></label>
+                                <div class="flex gap-2">
+                                    <button onclick="moveToType(${index})" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold">Move to Type ➔</button>
+                                    <button onclick="removeProductCard(${index})" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold">✖ Remove</button>
+                                </div>
+                            </div>
+                            <input type="text" class="w-full p-3 border border-gray-300 rounded mb-4 font-medium focus:border-blue-500 outline-none" value="${escapeHtml(p.title)}" id="title-${index}">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <label class="block text-sm font-bold text-gray-700">Description (HTML)</label>
-                                        <button type="button" onclick="previewHtml(${index})" class="text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded hover:bg-gray-300 transition font-bold shadow-sm">👁️ View</button>
-                                    </div>
-                                    <textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:outline-none focus:border-blue-500" id="desc-${index}">${escapeHtml(p.body_html || "")}</textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">Product Information (Auto-Scraped)</label>
-                                    <textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:outline-none focus:border-blue-500" placeholder="Extracted details will appear here or paste manually..." id="extra-${index}">${escapeHtml(p.extra_info || "")}</textarea>
-                                </div>
+                                <div><div class="flex justify-between mb-1"><label class="text-sm font-bold">Description (HTML)</label><button onclick="previewHtml(${index})" class="text-xs bg-gray-200 px-2 rounded font-bold">👁️ View</button></div><textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:border-blue-500 outline-none" id="desc-${index}">${escapeHtml(p.body_html || "")}</textarea></div>
+                                <div><label class="text-sm font-bold mb-1 block">Scraped Info</label><textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:border-blue-500 outline-none" id="extra-${index}">${escapeHtml(p.extra_info || "")}</textarea></div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                                <div><label class="text-sm font-bold">Price</label><input type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" id="price-${index}"></div>
+                                <div><label class="text-sm font-bold">SKU</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" id="sku-${index}"></div>
+                                <div><label class="text-sm font-bold">Vendor</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" value="${escapeHtml(p.vendor || "")}" id="vendor-${index}"></div>
+                                <div><label class="text-sm font-bold">Qty</label><input type="number" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" id="qty-${index}"></div>
+                                <div><label class="text-sm font-bold">Type</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" value="${escapeHtml(defaultType)}" id="type-${index}"></div>
+                                <div><label class="text-sm font-bold">Status</label><select id="status-${index}" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none"><option value="active">Active</option><option value="draft">Draft</option></select></div>
                             </div>
                             
-                            <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-                                <div><label class="block text-sm font-bold text-gray-700 mb-1">Price <span class="text-xs text-blue-500 font-normal ml-1">(Original: ${p.variants && p.variants.length > 0 ? (Number(p.variants[0].price) / 100).toLocaleString('en-US') : (p.price ? (Number(p.price) / 100).toLocaleString('en-US') : 'N/A')})</span></label><input type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded" id="price-${index}"></div>
-                                <div><label class="block text-sm font-bold text-gray-700 mb-1">SKU</label><input type="text" class="w-full p-3 border border-gray-300 rounded" id="sku-${index}"></div>
-                                <div><label class="block text-sm font-bold text-gray-700 mb-1">Vendor</label><input type="text" class="w-full p-3 border border-gray-300 rounded" value="${escapeHtml(p.vendor || "")}" id="vendor-${index}"></div>
-                                <div><label class="block text-sm font-bold text-gray-700 mb-1">Qty</label><input type="number" class="w-full p-3 border border-gray-300 rounded" id="qty-${index}"></div>
-                                <div><label class="block text-sm font-bold text-gray-700 mb-1">Type</label><input type="text" class="w-full p-3 border border-gray-300 rounded" value="${escapeHtml(defaultType)}" id="type-${index}"></div>
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">Status</label>
-                                    <select id="status-${index}" class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
-                                        <option value="active">Active</option>
-                                        <option value="draft">Draft</option>
-                                    </select>
+                            <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                
+                                <div class="flex justify-between items-end gap-2 mb-4 pb-4 border-b border-gray-200">
+                                    <div class="flex-1">
+                                        <label class="text-sm font-bold text-gray-700 block mb-1">📐 Size Chart Page (Optional):</label>
+                                        <select id="sizeChart-${index}" class="p-2 border border-gray-300 rounded w-full text-sm size-chart-dropdown bg-white focus:border-blue-500 outline-none">
+                                            <option value="">-- No Size Chart --</option>
+                                            ${pagesOptions}
+                                        </select>
+                                    </div>
+                                    <button onclick="openSizeChartModal(${index})" class="bg-blue-100 text-blue-700 px-4 py-2 rounded hover:bg-blue-200 font-bold border border-blue-300 text-sm h-[38px] flex items-center shadow-sm">➕ Create New</button>
                                 </div>
+
+                                <div class="flex justify-between items-center mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-sm font-bold text-gray-700">Option Name:</label>
+                                        <input type="text" id="optName-${index}" value="Size" class="p-1 border border-gray-300 rounded w-24 text-sm font-bold text-center bg-white shadow-sm focus:border-blue-500 outline-none">
+                                    </div>
+                                    <button onclick="addVariantRow(${index})" class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 font-bold shadow-sm">+ Add Variant</button>
+                                </div>
+                                <div id="variants-${index}"></div>
                             </div>
+
                         </div>
                         
-                        <div class="lg:col-span-4 bg-gray-50 p-5 rounded-lg border border-gray-200 flex flex-col justify-between">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-3 border-b pb-2">Media (Drag to reorder)</label>
-                                <div class="img-grid bg-white p-2" id="imgs-${index}"></div>
-                            </div>
-                            <button onclick="uploadToShopify(${index})" id="upBtn-${index}" class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold shadow-md uppercase">Upload to Store</button>
+                        <div class="lg:col-span-4 bg-gray-50 p-5 rounded-lg border flex flex-col justify-between">
+                            <div><label class="text-sm font-bold mb-3 border-b pb-2 block">Media</label><div class="img-grid bg-white" id="imgs-${index}"></div></div>
+                            <button onclick="uploadToShopify(${index})" id="upBtn-${index}" class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold shadow">Upload to Store</button>
                         </div>
                     </div>
                 `;
-                container.appendChild(card);
-                renderImagesOnly(index); 
+                container.appendChild(card); renderImagesOnly(index); 
             });
             updateLoadedCount();
         }
-function removeProductCard(index) {
-            const card = document.getElementById(`card-${index}`);
-            if (card) {
-                card.style.opacity = "0";
-                setTimeout(() => {
-                    card.remove();
-                    updateLoadedCount();
-                }, 300);
-            }
-        }
-
-        function renderImagesOnly(pIdx) {
-            const container = document.getElementById(`imgs-${pIdx}`);
-            const p = currentProducts[pIdx];
-            if (!container) return; // safety check
-            
-            if (p.images.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-sm">No images.</p>';
-                return;
-            }
-            container.innerHTML = p.images.map((img, imgIdx) => `
-                <div class="img-item" draggable="true" ondragstart="dragStart(event, ${pIdx}, ${imgIdx})" ondragover="dragOver(event)" ondrop="drop(event, ${pIdx}, ${imgIdx})">
-                    <img src="${img.src}" class="${imgIdx === 0 ? 'main-img' : ''}" title="Drag to change placement">
-                    <span class="remove-btn" onclick="removeImg(${pIdx}, ${imgIdx})">×</span>
-                    <span class="view-btn" onclick="openImageModal('${img.src}')">👁️</span>
-                </div>
-            `).join('');
-        }
-
-        function dragStart(e, pIdx, imgIdx) { e.dataTransfer.setData("text/plain", JSON.stringify({ pIdx, imgIdx })); }
+        
+        function removeProductCard(idx) { const c = document.getElementById(`card-${idx}`); if(c){ c.style.opacity = "0"; setTimeout(()=>{ c.remove(); updateLoadedCount(); }, 300); } }
+        function renderImagesOnly(idx) { const c = document.getElementById(`imgs-${idx}`); if(!c) return; const p = currentProducts[idx]; if(p.images.length === 0) return c.innerHTML = '<p>No images.</p>'; c.innerHTML = p.images.map((img, i) => `<div class="img-item" draggable="true" ondragstart="dragStart(event, ${idx}, ${i})" ondragover="dragOver(event)" ondrop="drop(event, ${idx}, ${i})"><img src="${img.src}" class="${i===0?'main-img':''}"><span class="remove-btn" onclick="removeImg(${idx}, ${i})">×</span><span class="view-btn" onclick="openImageModal('${img.src}')">👁️</span></div>`).join(''); }
+        function dragStart(e, pIdx, imgIdx) { e.dataTransfer.setData("text", JSON.stringify({ pIdx, imgIdx })); }
         function dragOver(e) { e.preventDefault(); }
-        function drop(e, targetPIdx, targetImgIdx) {
-            e.preventDefault();
-            const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-            if (data.pIdx === targetPIdx && data.imgIdx !== targetImgIdx) {
-                const draggedImg = currentProducts[targetPIdx].images.splice(data.imgIdx, 1)[0];
-                currentProducts[targetPIdx].images.splice(targetImgIdx, 0, draggedImg);
-                renderImagesOnly(targetPIdx);
-            }
-        }
-
-        function removeImg(pIdx, imgIdx) {
-            currentProducts[pIdx].images.splice(imgIdx, 1);
-            renderImagesOnly(pIdx); 
-        }
-
-        function openImageModal(src) {
-            document.getElementById('modalImage').src = src;
-            document.getElementById('imageModal').classList.remove('hidden');
-        }
+        function drop(e, tIdx, tImg) { e.preventDefault(); const d = JSON.parse(e.dataTransfer.getData("text")); if (d.pIdx === tIdx && d.imgIdx !== tImg) { const img = currentProducts[tIdx].images.splice(d.imgIdx, 1)[0]; currentProducts[tIdx].images.splice(tImg, 0, img); renderImagesOnly(tIdx); } }
+        function removeImg(pIdx, imgIdx) { currentProducts[pIdx].images.splice(imgIdx, 1); renderImagesOnly(pIdx); }
+        function openImageModal(src) { document.getElementById('modalImage').src = src; document.getElementById('imageModal').classList.remove('hidden'); }
         function closeImageModal() { document.getElementById('imageModal').classList.add('hidden'); }
-        document.getElementById('imageModal').addEventListener('click', function(e) { if(e.target===this) closeImageModal(); });
 
-        function escapeHtml(unsafe) {
-            if(!unsafe) return "";
-            return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
+        function escapeHtml(unsafe) { return !unsafe ? "" : unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
         async function uploadToShopify(index) {
-            const btn = document.getElementById(`upBtn-${index}`);
-            btn.innerText = "Processing..."; btn.disabled = true;
-            btn.classList.replace('bg-green-600', 'bg-gray-400');
-
-            let mainDesc = document.getElementById(`desc-${index}`).value;
-            let extraInfo = document.getElementById(`extra-${index}`).value.trim();
-            let finalCombinedHtml = mainDesc;
+            const btn = document.getElementById(`upBtn-${index}`); btn.innerText = "Processing..."; btn.disabled = true; btn.classList.replace('bg-green-600', 'bg-gray-400');
             
-            if (extraInfo !== "") {
-                finalCombinedHtml += "<br><br><strong>Product Information:</strong><br>" + extraInfo.replace(/\n/g, "<br>");
+            let finalCombinedHtml = document.getElementById(`desc-${index}`).value;
+            let extraInfo = document.getElementById(`extra-${index}`).value.trim();
+            if (extraInfo) finalCombinedHtml += "<br><br><strong>Product Information:</strong><br>" + extraInfo.replace(/\n/g, "<br>");
+            
+            // Apply Size Chart Page specific to THIS product
+            const scSelect = document.getElementById(`sizeChart-${index}`);
+            if (scSelect && scSelect.value) {
+                const handle = scSelect.value;
+                const title = scSelect.options[scSelect.selectedIndex].text;
+                finalCombinedHtml += `<br><br><div style="padding:10px; border:1px solid #eee; background:#f9f9f9; text-align:center;"><strong>📏 Size Chart:</strong> <a href="/pages/${handle}" target="_blank" style="color:#3b82f6; font-weight:bold; text-decoration:underline;">View ${escapeHtml(title)}</a></div>`;
+            }
+
+            // Apply Variants
+            let apiVariants = [];
+            let apiOptions = [];
+            const vRows = document.querySelectorAll(`#variants-${index} .variant-row`);
+            
+            if (vRows.length > 0) {
+                apiOptions = [{ name: document.getElementById(`optName-${index}`).value || "Size" }];
+                vRows.forEach(row => {
+                    apiVariants.push({
+                        option1: row.querySelector('.var-val').value || "Default",
+                        price: row.querySelector('.var-price').value || "0.00",
+                        sku: row.querySelector('.var-sku').value || "",
+                        qty: row.querySelector('.var-qty').value || "0"
+                    });
+                });
+            } else {
+                apiVariants.push({
+                    option1: "Default Title",
+                    price: document.getElementById(`price-${index}`).value || "0.00",
+                    sku: document.getElementById(`sku-${index}`).value || "",
+                    qty: document.getElementById(`qty-${index}`).value || "0"
+                });
             }
 
             const payload = {
-                action: "uploadProduct", collection_ids: selectedCollections, qty: document.getElementById(`qty-${index}`).value || "0",
+                action: "uploadProduct", collection_ids: selectedCollections,
                 product: {
-                    title: document.getElementById(`title-${index}`).value, 
-                    body_html: finalCombinedHtml,
-                    vendor: document.getElementById(`vendor-${index}`).value, 
-                    product_type: document.getElementById(`type-${index}`).value,
-                    status: document.getElementById(`status-${index}`).value,
-                    tags: selectedTags.join(", "),
-                    variants: [{ price: document.getElementById(`price-${index}`).value, sku: document.getElementById(`sku-${index}`).value }],
+                    title: document.getElementById(`title-${index}`).value, body_html: finalCombinedHtml,
+                    vendor: document.getElementById(`vendor-${index}`).value, product_type: document.getElementById(`type-${index}`).value,
+                    status: document.getElementById(`status-${index}`).value, tags: selectedTags.join(", "),
+                    options: apiOptions, variants: apiVariants,
                     images: currentProducts[index].images.map(img => img.src)
                 }
             };
 
             try {
                 const res = await (await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })).json();
-                
                 if(res.status === "success") {
                     const card = document.getElementById(`card-${index}`);
-                    
-                    card.innerHTML = `
-                        <div class="text-center py-12 bg-green-50 rounded-lg border border-green-200">
-                            <h3 class="text-3xl font-extrabold text-green-600 mb-2">✓ Uploaded Successfully</h3>
-                            <p class="text-green-700 font-medium text-lg">Product: ${escapeHtml(payload.product.title)}</p>
-                            <p class="text-gray-500 mt-2 text-sm">Removing from queue...</p>
-                        </div>
-                    `;
-                    
-                    setTimeout(() => {
-                        card.style.opacity = "0";
-                        setTimeout(() => {
-                            card.remove();
-                            updateLoadedCount();
-                        }, 500);
-                    }, 1500);
+                    card.innerHTML = `<div class="text-center py-12 bg-green-50 rounded-lg border border-green-200"><h3 class="text-3xl font-extrabold text-green-600 mb-2">✓ Uploaded Successfully</h3><p class="text-green-700 font-medium text-lg">Product: ${escapeHtml(payload.product.title)}</p></div>`;
+                    setTimeout(() => { card.style.opacity = "0"; setTimeout(() => { card.remove(); updateLoadedCount(); }, 500); }, 1500);
                     return true;
-
-                } else {
-                    showCardError(index, "Error: " + res.message);
-                    btn.innerText = "Upload Failed"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-red-600');
-                    return false;
-                }
-            } catch (e) { 
-                showCardError(index, "Upload failed due to network error."); 
-                btn.innerText = "Upload Failed"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-red-600'); 
-                return false;
-            }
+                } else { showCardError(index, res.message); btn.innerText = "Upload Failed"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-red-600'); return false; }
+            } catch (e) { showCardError(index, "Network error."); btn.innerText = "Upload Failed"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-red-600'); return false; }
         }
 
-        function updateLoadedCount() {
-            const countEl = document.getElementById('loadedProductsCount');
-            if (countEl) {
-                const visibleCards = document.querySelectorAll('.product-card').length;
-                countEl.innerText = `Loaded Products: ${visibleCards}`;
-            }
-        }
-
-        function previewHtml(index) {
-            const htmlContent = document.getElementById(`desc-${index}`).value;
-            document.getElementById('htmlModalContent').innerHTML = htmlContent;
-            document.getElementById('htmlModal').classList.remove('hidden');
-        }
-
-        function closeHtmlModal() {
-            document.getElementById('htmlModal').classList.add('hidden');
-            document.getElementById('htmlModalContent').innerHTML = "";
-        }
-
-        document.getElementById('htmlModal').addEventListener('click', function(e) { 
-            if(e.target === this) closeHtmlModal(); 
-        });
+        function updateLoadedCount() { const countEl = document.getElementById('loadedProductsCount'); if (countEl) countEl.innerText = `Loaded: ${document.querySelectorAll('.product-card').length}`; }
+        function previewHtml(index) { document.getElementById('htmlModalContent').innerHTML = document.getElementById(`desc-${index}`).value; document.getElementById('htmlModal').classList.remove('hidden'); }
+        function closeHtmlModal() { document.getElementById('htmlModal').classList.add('hidden'); }
     </script>
 </body>
 </html>

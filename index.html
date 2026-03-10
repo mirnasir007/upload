@@ -82,7 +82,7 @@
             <div class="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-8">
                 <label class="block text-sm font-bold text-gray-800 mb-2">Vendor Collection URL</label>
                 <div class="flex flex-col md:flex-row gap-3">
-                    <input type="text" id="collectionUrl" placeholder="https://vendor.com/collections/all" class="flex-1 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                    <input type="text" id="collectionUrl" placeholder="https://vendor.com/collections/all" class="flex-1 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" onkeypress="if(event.key === 'Enter') fetchCollection()">
                     <button onclick="fetchCollection()" id="loadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-lg shadow-md flex items-center justify-center transition whitespace-nowrap">
                         Load Products <div id="spinner" class="loader border-white border-t-transparent hidden" style="display:none;"></div>
                     </button>
@@ -122,6 +122,9 @@
                         <option value="draft">Draft</option>
                     </select>
                 </div>
+                <div class="flex flex-col justify-end pb-1">
+                    <span id="loadedProductsCount" class="text-sm font-bold text-gray-700 bg-blue-100 px-3 py-2 rounded border border-blue-200">Loaded Products: 0</span>
+                </div>
                 <div class="flex gap-2 flex-wrap items-center">
                     <button onclick="applyGlobalSettings()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded shadow transition">
                         Apply to All
@@ -155,6 +158,16 @@
     <div id="imageModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-80 flex justify-center items-center backdrop-blur-sm">
         <span onclick="closeImageModal()" class="absolute top-5 right-8 text-white text-5xl cursor-pointer hover:text-gray-300 transition">&times;</span>
         <img id="modalImage" src="" class="max-w-[90vw] max-h-[90vh] rounded shadow-2xl border-4 border-white object-contain">
+    </div>
+
+    <div id="htmlModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-60 flex justify-center items-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] rounded-lg shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-xl font-bold text-gray-800">HTML Preview</h3>
+                <span onclick="closeHtmlModal()" class="text-gray-500 text-3xl cursor-pointer hover:text-red-500 transition leading-none">&times;</span>
+            </div>
+            <div id="htmlModalContent" class="p-6 overflow-y-auto flex-1 text-sm text-gray-800"></div>
+        </div>
     </div>
 
     <script>
@@ -620,7 +633,10 @@
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">Description (HTML)</label>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="block text-sm font-bold text-gray-700">Description (HTML)</label>
+                                        <button type="button" onclick="previewHtml(${index})" class="text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded hover:bg-gray-300 transition font-bold shadow-sm">👁️ View</button>
+                                    </div>
                                     <textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:outline-none focus:border-blue-500" id="desc-${index}">${escapeHtml(p.body_html || "")}</textarea>
                                 </div>
                                 <div>
@@ -657,13 +673,16 @@
                 container.appendChild(card);
                 renderImagesOnly(index); 
             });
+            updateLoadedCount();
         }
 function removeProductCard(index) {
             const card = document.getElementById(`card-${index}`);
             if (card) {
-                // Smooth animation diye card ta remove kora
                 card.style.opacity = "0";
-                setTimeout(() => card.remove(), 300);
+                setTimeout(() => {
+                    card.remove();
+                    updateLoadedCount();
+                }, 300);
             }
         }
 
@@ -757,7 +776,10 @@ function removeProductCard(index) {
                     
                     setTimeout(() => {
                         card.style.opacity = "0";
-                        setTimeout(() => card.remove(), 500);
+                        setTimeout(() => {
+                            card.remove();
+                            updateLoadedCount();
+                        }, 500);
                     }, 1500);
                     return true;
 
@@ -772,6 +794,29 @@ function removeProductCard(index) {
                 return false;
             }
         }
+
+        function updateLoadedCount() {
+            const countEl = document.getElementById('loadedProductsCount');
+            if (countEl) {
+                const visibleCards = document.querySelectorAll('.product-card').length;
+                countEl.innerText = `Loaded Products: ${visibleCards}`;
+            }
+        }
+
+        function previewHtml(index) {
+            const htmlContent = document.getElementById(`desc-${index}`).value;
+            document.getElementById('htmlModalContent').innerHTML = htmlContent;
+            document.getElementById('htmlModal').classList.remove('hidden');
+        }
+
+        function closeHtmlModal() {
+            document.getElementById('htmlModal').classList.add('hidden');
+            document.getElementById('htmlModalContent').innerHTML = "";
+        }
+
+        document.getElementById('htmlModal').addEventListener('click', function(e) { 
+            if(e.target === this) closeHtmlModal(); 
+        });
     </script>
 </body>
 </html>

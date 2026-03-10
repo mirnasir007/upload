@@ -114,9 +114,9 @@
         </div>
     </div>
 
-    <div id="imageModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-80 flex justify-center items-center backdrop-blur-sm">
-        <span onclick="closeImageModal()" class="absolute top-5 right-8 text-white text-5xl cursor-pointer">&times;</span>
-        <img id="modalImage" src="" class="max-w-[90vw] max-h-[90vh] rounded border-4 border-white object-contain">
+    <div id="imageModal" onclick="closeImageModal()" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-80 flex justify-center items-center backdrop-blur-sm cursor-pointer">
+        <span class="absolute top-5 right-8 text-white text-5xl hover:text-gray-300 transition">&times;</span>
+        <img id="modalImage" onclick="event.stopPropagation()" src="" class="max-w-[90vw] max-h-[90vh] rounded border-4 border-white object-contain cursor-default">
     </div>
 
     <div id="htmlModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-60 flex justify-center items-center p-4">
@@ -144,7 +144,10 @@
                 <div class="flex gap-2 mb-2 bg-gray-100 p-2 rounded border border-b-0 rounded-b-none">
                     <button onclick="document.execCommand('bold',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm font-bold hover:bg-gray-50">B</button>
                     <button onclick="document.execCommand('italic',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm italic hover:bg-gray-50">I</button>
-                    <button onclick="insertImagePrompt()" class="px-3 py-1 bg-white border rounded shadow-sm text-sm hover:bg-gray-50 font-bold text-blue-600">🖼️ Insert Image Link</button>
+                    <label class="px-3 py-1 bg-white border rounded shadow-sm text-sm hover:bg-gray-50 font-bold text-blue-600 cursor-pointer mb-0 flex items-center">
+                        🖼️ Upload Image
+                        <input type="file" id="scImageUpload" accept="image/*" class="hidden" onchange="handleScImageUpload(event)">
+                    </label>
                     <button onclick="document.execCommand('removeFormat',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm text-sm hover:bg-gray-50 ml-auto">Clear Format</button>
                 </div>
                 <div id="scEditor" contenteditable="true" class="w-full p-3 border border-t-0 rounded rounded-t-none h-64 overflow-y-auto bg-white mb-4" placeholder="Paste your table or type here..."></div>
@@ -164,7 +167,22 @@
         
         let targetSizeChartIndex = null; // To track which product opened the modal
 
-        document.addEventListener('DOMContentLoaded', loadStoreData);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStoreData();
+            
+            // Allow direct Paste of images into Rich Text Editor
+            document.getElementById('scEditor').addEventListener('paste', function(e) {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let index in items) {
+                    const item = items[index];
+                    if (item.kind === 'file') {
+                        e.preventDefault();
+                        const blob = item.getAsFile();
+                        insertImageToBase64(blob);
+                    }
+                }
+            });
+        });
 
         async function loadStoreData() {
             try {
@@ -177,19 +195,28 @@
             } catch (e) { console.error("API Error", e); }
         }
 
-        // Rich Text Editor Image Insert
-        function insertImagePrompt() {
-            const url = prompt("Enter the Image Address/URL:");
-            if (url) {
-                document.execCommand('insertImage', false, url);
-            }
+        // Handle Image Upload directly into Editor
+        function handleScImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) insertImageToBase64(file);
+            event.target.value = ""; // reset
+        }
+
+        function insertImageToBase64(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result;
+                document.getElementById('scEditor').focus();
+                document.execCommand('insertImage', false, base64Data);
+            };
+            reader.readAsDataURL(file);
         }
 
         function openSizeChartModal(index) { 
             targetSizeChartIndex = index;
             document.getElementById('sizeChartModal').classList.remove('hidden'); 
-            const defaultTitle = document.getElementById(`title-${index}`).value;
-            document.getElementById('scTitle').value = defaultTitle ? "Size Chart - " + defaultTitle : "Size Chart - ";
+            const productType = document.getElementById(`type-${index}`).value;
+            document.getElementById('scTitle').value = productType ? productType : "Size Chart";
             document.getElementById('scEditor').innerHTML = ""; // Clear editor
             document.getElementById('scEditor').focus();
         }
@@ -211,17 +238,18 @@
                     
                     // Update all dropdowns on the page without resetting their current selected values
                     document.querySelectorAll('.size-chart-dropdown').forEach(select => {
-                        const currentVal = select.value;
-                        const optionsHtml = storePages.map(p => `<option value="${p.handle}">${escapeHtml(p.title)}</option>`).join('');
-                        select.innerHTML = '<option value="">-- No Size Chart --</option>' + optionsHtml;
-                        select.value = currentVal;
-                    });
+                    const currentVal = select.value;
+                // Update to use p.id instead of p.handle for Metafield
+                const optionsHtml = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
+                select.innerHTML = '<option value="">-- No Size Chart --</option>' + optionsHtml;
+                select.value = currentVal;
+            });
 
-                    // Auto select for the specific product that triggered the modal
-                    if(targetSizeChartIndex !== null) {
-                        const targetDropdown = document.getElementById(`sizeChart-${targetSizeChartIndex}`);
-                        if(targetDropdown) targetDropdown.value = res.page.handle;
-                    }
+            // Auto select for the specific product that triggered the modal
+            if(targetSizeChartIndex !== null) {
+                const targetDropdown = document.getElementById(`sizeChart-${targetSizeChartIndex}`);
+                if(targetDropdown) targetDropdown.value = res.page.id; // Use ID for Metafield
+            }
                     
                     closeSizeChartModal();
                 } else { alert("Error: " + res.message); }
@@ -259,7 +287,20 @@
         function renderColList(filterText = "") {
             const container = document.getElementById('colList'); container.innerHTML = "";
             const lowerFilter = filterText.toLowerCase();
-            const filtered = filterText === "" ? allCollections : allCollections.filter(c => c.title.toLowerCase().includes(lowerFilter));
+            let filtered = filterText === "" ? allCollections : allCollections.filter(c => c.title.toLowerCase().includes(lowerFilter));
+            
+            if (filterText !== "") {
+                filtered.sort((a, b) => {
+                    const aLower = a.title.toLowerCase();
+                    const bLower = b.title.toLowerCase();
+                    if (aLower === lowerFilter && bLower !== lowerFilter) return -1;
+                    if (aLower !== lowerFilter && bLower === lowerFilter) return 1;
+                    if (aLower.startsWith(lowerFilter) && !bLower.startsWith(lowerFilter)) return -1;
+                    if (!aLower.startsWith(lowerFilter) && bLower.startsWith(lowerFilter)) return 1;
+                    return aLower.indexOf(lowerFilter) - bLower.indexOf(lowerFilter);
+                });
+            }
+
             if(filtered.length === 0) return container.innerHTML = `<p class="p-2">No match</p>`;
             filtered.forEach(c => {
                 const isChecked = selectedCollections.includes(c.id);
@@ -288,7 +329,20 @@
             const container = document.getElementById('tagList'); container.innerHTML = "";
             const uniqueTags = [...new Set([...storeTags, ...selectedTags])];
             const lowerFilter = filterText.toLowerCase();
-            const filtered = filterText === "" ? uniqueTags : uniqueTags.filter(t => t.toLowerCase().includes(lowerFilter));
+            let filtered = filterText === "" ? uniqueTags : uniqueTags.filter(t => t.toLowerCase().includes(lowerFilter));
+            
+            if (filterText !== "") {
+                filtered.sort((a, b) => {
+                    const aLower = a.toLowerCase();
+                    const bLower = b.toLowerCase();
+                    if (aLower === lowerFilter && bLower !== lowerFilter) return -1;
+                    if (aLower !== lowerFilter && bLower === lowerFilter) return 1;
+                    if (aLower.startsWith(lowerFilter) && !bLower.startsWith(lowerFilter)) return -1;
+                    if (!aLower.startsWith(lowerFilter) && bLower.startsWith(lowerFilter)) return 1;
+                    return aLower.indexOf(lowerFilter) - bLower.indexOf(lowerFilter);
+                });
+            }
+
             if (filtered.length === 0) return container.innerHTML = `<p class="p-2">Press Enter to add.</p>`;
             filtered.forEach(t => {
                 const isChecked = selectedTags.includes(t);
@@ -414,8 +468,8 @@
         function appendProducts(newProducts) {
             const container = document.getElementById('productContainer'); const startIndex = currentProducts.length; currentProducts.push(...newProducts);
             
-            // Build Pages Dropdown options ONCE for this batch
-            const pagesOptions = storePages.map(p => `<option value="${p.handle}">${escapeHtml(p.title)}</option>`).join('');
+            // Build Pages Dropdown options ONCE for this batch (Using ID for Metafield)
+            const pagesOptions = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
 
             newProducts.forEach((p, i) => {
                 const index = startIndex + i; const defaultType = p.product_type || p.title;
@@ -498,12 +552,11 @@
             let extraInfo = document.getElementById(`extra-${index}`).value.trim();
             if (extraInfo) finalCombinedHtml += "<br><br><strong>Product Information:</strong><br>" + extraInfo.replace(/\n/g, "<br>");
             
-            // Apply Size Chart Page specific to THIS product
+            // Apply Size Chart Metafield specific to THIS product
             const scSelect = document.getElementById(`sizeChart-${index}`);
+            let sizeChartId = "";
             if (scSelect && scSelect.value) {
-                const handle = scSelect.value;
-                const title = scSelect.options[scSelect.selectedIndex].text;
-                finalCombinedHtml += `<br><br><div style="padding:10px; border:1px solid #eee; background:#f9f9f9; text-align:center;"><strong>📏 Size Chart:</strong> <a href="/pages/${handle}" target="_blank" style="color:#3b82f6; font-weight:bold; text-decoration:underline;">View ${escapeHtml(title)}</a></div>`;
+                sizeChartId = scSelect.value; // Store the Page ID for backend
             }
 
             // Apply Variants
@@ -531,7 +584,9 @@
             }
 
             const payload = {
-                action: "uploadProduct", collection_ids: selectedCollections,
+                action: "uploadProduct", 
+                collection_ids: selectedCollections,
+                size_chart_id: sizeChartId, // Pass Page ID to backend for Metafield
                 product: {
                     title: document.getElementById(`title-${index}`).value, body_html: finalCombinedHtml,
                     vendor: document.getElementById(`vendor-${index}`).value, product_type: document.getElementById(`type-${index}`).value,

@@ -29,9 +29,12 @@
         #scEditor img { max-width: 100%; height: auto; }
         #scEditor { overflow-x: hidden; }
         #scEditor:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+        
+        /* POS Table Styles */
+        #posTableBody tr:hover { background-color: #f1f5f9; cursor: pointer; }
     </style>
 </head>
-<body class="bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
+<body class="bg-gray-50 p-4 md:p-8 font-sans text-gray-800 relative">
     <div class="w-full mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg border border-gray-100">
         <h2 class="text-3xl font-extrabold mb-8 text-gray-900 border-b pb-4">Shopify Bulk Importer Pro</h2>
         
@@ -77,14 +80,28 @@
                 <button onclick="goToStep1()" class="text-sm text-blue-600 hover:underline font-semibold">← Back to Settings</button>
             </div>
 
-            <div class="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-8">
-                <label class="block text-sm font-bold text-gray-800 mb-2">Vendor Collection URL</label>
-                <div class="flex flex-col md:flex-row gap-3">
-                    <input type="text" id="collectionUrl" placeholder="https://vendor.com/collections/all" class="flex-1 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" onkeypress="if(event.key === 'Enter') fetchCollection()">
-                    <button onclick="fetchCollection()" id="loadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-lg shadow-md flex items-center justify-center transition whitespace-nowrap">
-                        Load Products <div id="spinner" class="loader border-white border-t-transparent hidden" style="display:none;"></div>
-                    </button>
+            <div class="sticky top-0 z-[40] bg-white bg-opacity-95 backdrop-blur-sm p-4 -mx-4 shadow-md border-b border-gray-200 mb-8 flex flex-col xl:flex-row gap-6 items-end">
+                
+                <div class="flex-1 w-full xl:w-1/2">
+                    <label class="block text-sm font-bold text-blue-800 mb-2">1. Vendor Collection URL</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="collectionUrl" placeholder="https://vendor.com/collections/all" class="flex-1 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" onkeypress="if(event.key === 'Enter') fetchCollection()">
+                        <button onclick="fetchCollection()" id="loadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded shadow-md flex items-center justify-center transition whitespace-nowrap">
+                            Load Products <div id="spinner" class="loader border-white border-t-transparent hidden" style="display:none;"></div>
+                        </button>
+                    </div>
                 </div>
+
+                <div class="flex-1 w-full xl:w-1/2 border-t xl:border-t-0 xl:border-l border-gray-200 xl:pl-6 pt-4 xl:pt-0">
+                    <label class="block text-sm font-bold text-teal-800 mb-2">2. POS Search </label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="globalPosInput" placeholder="Enter SKU, Brand or Product Name..." class="flex-1 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm" onkeypress="if(event.key === 'Enter') triggerGlobalPos()">
+                        <button onclick="triggerGlobalPos()" id="globalPosBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3 rounded shadow-md flex items-center justify-center transition whitespace-nowrap">
+                            Search POS
+                        </button>
+                    </div>
+                </div>
+
             </div>
 
             <div id="bulkEditSection" class="hidden bg-gray-100 p-5 rounded-lg border border-gray-200 mb-6 flex flex-wrap gap-4 items-end shadow-sm">
@@ -133,16 +150,11 @@
     <div id="sizeChartModal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-60 flex justify-center items-center p-4">
         <div class="bg-white w-full max-w-3xl rounded-lg flex flex-col shadow-2xl">
             <div class="flex justify-between items-center p-4 border-b">
-                <h3 class="text-xl font-bold text-indigo-700">📏 Create Size Chart (Hidden Page)</h3>
+                <h3 class="text-xl font-bold text-indigo-700">📏 Create Size Chart</h3>
                 <span onclick="closeSizeChartModal()" class="text-3xl cursor-pointer text-gray-500 hover:text-red-500 transition">&times;</span>
             </div>
             <div class="p-6">
-                <p class="text-xs text-gray-500 mb-4 bg-gray-50 p-2 rounded">Pages created here are automatically saved to Shopify as "Hidden" so they don't appear in store search results.</p>
-                
-                <label class="block text-sm font-bold mb-1">Page Title</label>
-                <input type="text" id="scTitle" class="w-full p-3 border rounded mb-4" placeholder="e.g. Size Chart - Red Dress">
-                
-                <label class="block text-sm font-bold mb-1">Content (Copy-paste table directly or insert image)</label>
+                <input type="text" id="scTitle" class="w-full p-3 border rounded mb-4" placeholder="Page Title">
                 <div class="flex gap-2 mb-2 bg-gray-100 p-2 rounded border border-b-0 rounded-b-none">
                     <button onclick="document.execCommand('bold',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm font-bold hover:bg-gray-50">B</button>
                     <button onclick="document.execCommand('italic',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm italic hover:bg-gray-50">I</button>
@@ -152,39 +164,209 @@
                     </label>
                     <button onclick="document.execCommand('removeFormat',false,null)" class="px-3 py-1 bg-white border rounded shadow-sm text-sm hover:bg-gray-50 ml-auto">Clear Format</button>
                 </div>
-                <div id="scEditor" contenteditable="true" class="w-full p-3 border border-t-0 rounded rounded-t-none h-64 overflow-y-auto bg-white mb-4" placeholder="Paste your table or type here..."></div>
-                
+                <div id="scEditor" contenteditable="true" class="w-full p-3 border border-t-0 rounded rounded-t-none h-64 overflow-y-auto bg-white mb-4"></div>
                 <button id="scSaveBtn" onclick="saveSizeChart()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded text-lg shadow">Save & Apply to Product</button>
             </div>
         </div>
     </div>
 
+    <div id="posModal" class="hidden fixed inset-0 z-[120] bg-black bg-opacity-60 flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-5xl max-h-[90vh] rounded-lg flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center p-4 border-b bg-teal-50 rounded-t-lg">
+                <h3 class="text-xl font-bold text-teal-800 flex items-center gap-2">🛒 POS Search Results <div id="posSpinner" class="loader border-teal-600 border-t-transparent hidden"></div></h3>
+                <span onclick="closePosModal()" class="text-3xl cursor-pointer text-gray-500 hover:text-red-500 transition">&times;</span>
+            </div>
+            
+            <div class="p-3 bg-gray-100 border-b flex flex-wrap justify-between items-center gap-2">
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <input type="text" id="modalPosInput" class="p-2 border border-gray-300 rounded text-sm w-64 focus:border-teal-500 outline-none" placeholder="Search again..." onkeypress="if(event.key === 'Enter') executePosSearch(true)">
+                    <button onclick="executePosSearch(true)" class="bg-teal-600 text-white px-4 py-2 rounded font-bold text-sm">Search</button>
+                </div>
+                <span id="posSearchMsg" class="font-bold text-sm text-teal-700"></span>
+            </div>
+
+            <div class="overflow-y-auto flex-1 p-0 relative">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-teal-600 text-white sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th class="p-3 border-b border-teal-700">SKU</th>
+                            <th class="p-3 border-b border-teal-700">Product Name</th>
+                            <th class="p-3 border-b border-teal-700">Price (MRP)</th>
+                            <th class="p-3 border-b border-teal-700 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="posTableBody" class="text-sm">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div id="posLoadMoreDiv" class="p-4 border-t bg-gray-50 text-center hidden">
+                <button onclick="loadMorePos()" id="posLoadMoreBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold px-8 py-2 rounded transition shadow-sm">Load More Results</button>
+            </div>
+        </div>
+    </div>
+
+
     <script>
+        // -- Main Shopify Web App URL --
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbywFzQu0m-wMkHFGAAy7irzlX20ixCBUqXEQfpmhlqNhG_Fa3113c9ufOvJxheDbUEO/exec"; 
         
+        // -- NEW: POS Web App URL --
+        const POS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIJuMUv6tfueLimEIxaShSCX5FfkPgRTngZ8Lc7_tNNcNNfi7P_pt9slIXe4oAo7Vm3Q/exec";
+        
+        // POS State Variables
+        let posCurrentPage = 1;
+        let posSearchText = "";
+        let posTotalLoaded = 0;
+        let activePosTargetIndex = null; // Keeps track of which product card requested the price
+
         let allCollections = [], storeTags = [], storePages = [];
         let selectedCollections = [], selectedTags = [];
         let currentProducts = [], allHandles = [], loadedCount = 0, vendorBaseUrl = "";
         const BATCH_SIZE = 10; 
         
-        let targetSizeChartIndex = null; // To track which product opened the modal
+        let targetSizeChartIndex = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             loadStoreData();
-            
-            // Allow direct Paste of images into Rich Text Editor
             document.getElementById('scEditor').addEventListener('paste', function(e) {
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
                 for (let index in items) {
                     const item = items[index];
-                    if (item.kind === 'file') {
-                        e.preventDefault();
-                        const blob = item.getAsFile();
-                        insertImageToBase64(blob);
-                    }
+                    if (item.kind === 'file') { e.preventDefault(); insertImageToBase64(item.getAsFile()); }
                 }
             });
         });
+
+        // --- NEW POS FUNCTIONS ---
+        function triggerGlobalPos() {
+            const val = document.getElementById('globalPosInput').value.trim();
+            if(!val) return alert("Please enter something to search in POS.");
+            document.getElementById('modalPosInput').value = val;
+            activePosTargetIndex = null; // No specific card targeted
+            executePosSearch(true);
+        }
+
+        function autoFetchPrice(cardIndex) {
+            // Get data from the Type box of this specific product card
+            const typeValue = document.getElementById(`type-${cardIndex}`).value.trim();
+            if(!typeValue) return alert("Type field is empty! Cannot search POS. Please write something in Type.");
+            
+            document.getElementById('modalPosInput').value = typeValue;
+            activePosTargetIndex = cardIndex; // Remember which card needs the price
+            executePosSearch(true);
+        }
+
+        function executePosSearch(isNewSearch) {
+            document.getElementById('posModal').classList.remove('hidden');
+            const searchVal = document.getElementById('modalPosInput').value.trim();
+            
+            if (isNewSearch) {
+                posSearchText = searchVal;
+                posCurrentPage = 1;
+                posTotalLoaded = 0;
+                document.getElementById('posTableBody').innerHTML = '';
+            }
+
+            const msgBox = document.getElementById('posSearchMsg');
+            const loadMoreBtn = document.getElementById('posLoadMoreDiv');
+            const spinner = document.getElementById('posSpinner');
+
+            spinner.style.display = 'inline-block';
+            if(isNewSearch) msgBox.innerText = "Searching POS... Please wait.";
+            loadMoreBtn.classList.add('hidden');
+
+            const requestUrl = POS_SCRIPT_URL + "?search=" + encodeURIComponent(posSearchText) + "&page=" + posCurrentPage;
+            
+            fetch(requestUrl)
+                .then(response => response.json())
+                .then(response => {
+                    spinner.style.display = 'none';
+                    if (response.success) {
+                        posTotalLoaded += response.data.length;
+                        msgBox.innerText = "Showing " + posTotalLoaded + " result(s).";
+                        
+                        let rowsHtml = '';
+                        response.data.forEach(item => {
+                            // Escape quotes so they don't break the onclick function
+                            const safePrice = String(item.price).replace(/'/g, "\\'");
+                            const safeSku = String(item.sku).replace(/'/g, "\\'");
+                            
+                            rowsHtml += `<tr class="border-b" onclick="selectPosItem('${safePrice}', '${safeSku}')">
+                                <td class="p-3">${escapeHtml(item.sku)}</td>
+                                <td class="p-3 font-medium text-gray-800">${escapeHtml(item.name)}</td>
+                                <td class="p-3 font-bold text-green-700">${escapeHtml(item.price)} TK</td>
+                                <td class="p-3 text-center">
+                                    <button class="bg-teal-100 text-teal-700 border border-teal-300 px-3 py-1 rounded text-xs font-bold hover:bg-teal-600 hover:text-white transition" onclick="event.stopPropagation(); selectPosItem('${safePrice}', '${safeSku}')">
+                                        Select
+                                    </button>
+                                </td>
+                            </tr>`;
+                        });
+                        
+                        document.getElementById('posTableBody').insertAdjacentHTML('beforeend', rowsHtml);
+
+                        if (response.count === 50) loadMoreBtn.classList.remove('hidden');
+                        
+                    } else {
+                        if (isNewSearch) msgBox.innerText = response.message;
+                    }
+                })
+                .catch(error => {
+                    spinner.style.display = 'none';
+                    msgBox.innerText = "Network Error with POS.";
+                });
+        }
+
+        function loadMorePos() {
+            posCurrentPage++;
+            executePosSearch(false);
+        }
+
+        function selectPosItem(price, sku) {
+            if (activePosTargetIndex !== null) {
+                // User came from a specific product card, auto-fill it!
+                const priceField = document.getElementById(`price-${activePosTargetIndex}`);
+                const skuField = document.getElementById(`sku-${activePosTargetIndex}`);
+                
+                if (priceField) priceField.value = price;
+                if (skuField) skuField.value = sku;
+                
+                // Visual feedback
+                priceField.classList.add('ring-2', 'ring-green-500', 'bg-green-50');
+                skuField.classList.add('ring-2', 'ring-green-500', 'bg-green-50');
+                setTimeout(() => {
+                    priceField.classList.remove('ring-2', 'ring-green-500', 'bg-green-50');
+                    skuField.classList.remove('ring-2', 'ring-green-500', 'bg-green-50');
+                }, 1500);
+
+                closePosModal();
+            } else {
+                // General search, fill Global Price and Global SKU
+                const globalPriceField = document.getElementById('globalPrice');
+                const globalSkuField = document.getElementById('globalSku');
+                
+                if (globalPriceField) globalPriceField.value = price;
+                if (globalSkuField) globalSkuField.value = sku;
+
+                // Visual feedback for Global fields
+                globalPriceField.classList.add('ring-2', 'ring-teal-500', 'bg-teal-50');
+                globalSkuField.classList.add('ring-2', 'ring-teal-500', 'bg-teal-50');
+                setTimeout(() => {
+                    globalPriceField.classList.remove('ring-2', 'ring-teal-500', 'bg-teal-50');
+                    globalSkuField.classList.remove('ring-2', 'ring-teal-500', 'bg-teal-50');
+                }, 1500);
+
+                closePosModal();
+            }
+        }
+
+        function closePosModal() { 
+            document.getElementById('posModal').classList.add('hidden'); 
+            activePosTargetIndex = null;
+        }
+        // --- END POS FUNCTIONS ---
+
 
         async function loadStoreData() {
             try {
@@ -197,11 +379,10 @@
             } catch (e) { console.error("API Error", e); }
         }
 
-        // Handle Image Upload directly into Editor
         function handleScImageUpload(event) {
             const file = event.target.files[0];
             if (file) insertImageToBase64(file);
-            event.target.value = ""; // reset
+            event.target.value = ""; 
         }
 
         function insertImageToBase64(file) {
@@ -219,7 +400,7 @@
             document.getElementById('sizeChartModal').classList.remove('hidden'); 
             const productType = document.getElementById(`type-${index}`).value;
             document.getElementById('scTitle').value = productType ? productType : "Size Chart";
-            document.getElementById('scEditor').innerHTML = ""; // Clear editor
+            document.getElementById('scEditor').innerHTML = ""; 
             document.getElementById('scEditor').focus();
         }
         
@@ -227,53 +408,38 @@
         
         async function saveSizeChart() {
             const title = document.getElementById('scTitle').value.trim();
-            let rawHtml = document.getElementById('scEditor').innerHTML.trim(); // Get Rich Text HTML
+            let rawHtml = document.getElementById('scEditor').innerHTML.trim();
             if(!title || !rawHtml || rawHtml === "<br>") return alert("Title and Content are required.");
             
-            // Apply beautiful and responsive styling to tables
             if(rawHtml.includes("<table")) {
-                // Changed /i to /gi to fix ALL tables at once, and table-layout: auto for natural text wrapping (height increase)
                 rawHtml = rawHtml.replace(/<table[^>]*>/gi, '<table style="width: 100% !important; max-width: 100% !important; table-layout: auto !important; box-sizing: border-box; border-collapse: collapse; text-align: left; font-family: inherit; margin-bottom: 20px;">');
-                
-                // Force word wrapping in headers to increase height instead of width
                 rawHtml = rawHtml.replace(/<th[^>]*>/gi, '<th style="padding: 8px; border: 1px solid #ddd; color: #333; font-weight: bold; box-sizing: border-box; text-align: left; white-space: normal !important; word-wrap: break-word !important; word-break: break-word !important;">');
-                
-                // Force word wrapping in cells to increase height instead of width
                 rawHtml = rawHtml.replace(/<td[^>]*>/gi, '<td style="padding: 8px; border: 1px solid #ddd; color: #333; box-sizing: border-box; text-align: left; white-space: normal !important; word-wrap: break-word !important; word-break: break-word !important;">');
             }
-            
             const html = rawHtml;
-            
             const btn = document.getElementById('scSaveBtn');
             btn.innerText = "Saving to Shopify..."; btn.disabled = true;
             
             try {
                 const res = await (await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action: "createPage", title: title, body_html: html}) })).json();
                 if(res.status === "success") {
-                    storePages.unshift(res.page); // Add new page to top of array
-                    
-                    // Update all dropdowns on the page without resetting their current selected values
+                    storePages.unshift(res.page);
                     document.querySelectorAll('.size-chart-dropdown').forEach(select => {
-                    const currentVal = select.value;
-                // Update to use p.id instead of p.handle for Metafield
-                const optionsHtml = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
-                select.innerHTML = '<option value="">-- No Size Chart --</option>' + optionsHtml;
-                select.value = currentVal;
-            });
-
-            // Auto select for the specific product that triggered the modal
-            if(targetSizeChartIndex !== null) {
-                const targetDropdown = document.getElementById(`sizeChart-${targetSizeChartIndex}`);
-                if(targetDropdown) targetDropdown.value = res.page.id; // Use ID for Metafield
-            }
-                    
+                        const currentVal = select.value;
+                        const optionsHtml = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
+                        select.innerHTML = '<option value="">-- No Size Chart --</option>' + optionsHtml;
+                        select.value = currentVal;
+                    });
+                    if(targetSizeChartIndex !== null) {
+                        const targetDropdown = document.getElementById(`sizeChart-${targetSizeChartIndex}`);
+                        if(targetDropdown) targetDropdown.value = res.page.id; 
+                    }
                     closeSizeChartModal();
                 } else { alert("Error: " + res.message); }
             } catch (e) { alert("Network Error"); }
             btn.innerText = "Save & Apply to Product"; btn.disabled = false;
         }
 
-        // Add Variant Logic (Auto-fills price/sku/qty from the main fields)
         function addVariantRow(pIdx) {
             const container = document.getElementById(`variants-${pIdx}`);
             const basePrice = document.getElementById(`price-${pIdx}`).value;
@@ -292,7 +458,6 @@
             container.appendChild(row);
         }
 
-        // UI & Navigation
         function goToStep2() { document.getElementById('step1').classList.add('hidden'); document.getElementById('step2').classList.remove('hidden'); }
         function goToStep1() { document.getElementById('step2').classList.add('hidden'); document.getElementById('step1').classList.remove('hidden'); }
         const setupDropdown = (b, m) => document.getElementById(b).addEventListener('click', e => { e.stopPropagation(); closeAllMenus(); document.getElementById(m).classList.toggle('show'); });
@@ -304,19 +469,6 @@
             const container = document.getElementById('colList'); container.innerHTML = "";
             const lowerFilter = filterText.toLowerCase();
             let filtered = filterText === "" ? allCollections : allCollections.filter(c => c.title.toLowerCase().includes(lowerFilter));
-            
-            if (filterText !== "") {
-                filtered.sort((a, b) => {
-                    const aLower = a.title.toLowerCase();
-                    const bLower = b.title.toLowerCase();
-                    if (aLower === lowerFilter && bLower !== lowerFilter) return -1;
-                    if (aLower !== lowerFilter && bLower === lowerFilter) return 1;
-                    if (aLower.startsWith(lowerFilter) && !bLower.startsWith(lowerFilter)) return -1;
-                    if (!aLower.startsWith(lowerFilter) && bLower.startsWith(lowerFilter)) return 1;
-                    return aLower.indexOf(lowerFilter) - bLower.indexOf(lowerFilter);
-                });
-            }
-
             if(filtered.length === 0) return container.innerHTML = `<p class="p-2">No match</p>`;
             filtered.forEach(c => {
                 const isChecked = selectedCollections.includes(c.id);
@@ -346,19 +498,6 @@
             const uniqueTags = [...new Set([...storeTags, ...selectedTags])];
             const lowerFilter = filterText.toLowerCase();
             let filtered = filterText === "" ? uniqueTags : uniqueTags.filter(t => t.toLowerCase().includes(lowerFilter));
-            
-            if (filterText !== "") {
-                filtered.sort((a, b) => {
-                    const aLower = a.toLowerCase();
-                    const bLower = b.toLowerCase();
-                    if (aLower === lowerFilter && bLower !== lowerFilter) return -1;
-                    if (aLower !== lowerFilter && bLower === lowerFilter) return 1;
-                    if (aLower.startsWith(lowerFilter) && !bLower.startsWith(lowerFilter)) return -1;
-                    if (!aLower.startsWith(lowerFilter) && bLower.startsWith(lowerFilter)) return 1;
-                    return aLower.indexOf(lowerFilter) - bLower.indexOf(lowerFilter);
-                });
-            }
-
             if (filtered.length === 0) return container.innerHTML = `<p class="p-2">Press Enter to add.</p>`;
             filtered.forEach(t => {
                 const isChecked = selectedTags.includes(t);
@@ -483,8 +622,6 @@
 
         function appendProducts(newProducts) {
             const container = document.getElementById('productContainer'); const startIndex = currentProducts.length; currentProducts.push(...newProducts);
-            
-            // Build Pages Dropdown options ONCE for this batch (Using ID for Metafield)
             const pagesOptions = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
 
             newProducts.forEach((p, i) => {
@@ -505,13 +642,19 @@
                                 <div><div class="flex justify-between mb-1"><label class="text-sm font-bold">Description (HTML)</label><button onclick="previewHtml(${index})" class="text-xs bg-gray-200 px-2 rounded font-bold">👁️ View</button></div><textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:border-blue-500 outline-none" id="desc-${index}">${escapeHtml(p.body_html || "")}</textarea></div>
                                 <div><label class="text-sm font-bold mb-1 block">Scraped Info</label><textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:border-blue-500 outline-none" id="extra-${index}">${escapeHtml(p.extra_info || "")}</textarea></div>
                             </div>
-                            <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-                                <div><label class="text-sm font-bold">Price</label><input type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" id="price-${index}"></div>
-                                <div><label class="text-sm font-bold">SKU</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" id="sku-${index}"></div>
-                                <div><label class="text-sm font-bold">Vendor</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" value="${escapeHtml(p.vendor || "")}" id="vendor-${index}"></div>
-                                <div><label class="text-sm font-bold">Qty</label><input type="number" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" id="qty-${index}"></div>
-                                <div><label class="text-sm font-bold">Type</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" value="${escapeHtml(defaultType)}" id="type-${index}"></div>
-                                <div><label class="text-sm font-bold">Status</label><select id="status-${index}" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none"><option value="active">Active</option><option value="draft">Draft</option></select></div>
+                            <div class="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
+                                <div>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-sm font-bold">Price</label>
+                                        <button type="button" onclick="autoFetchPrice(${index})" class="text-[10px] bg-teal-100 text-teal-700 hover:bg-teal-200 px-1.5 py-0.5 rounded font-bold border border-teal-300 transition-colors shadow-sm">🔍 Add</button>
+                                    </div>
+                                    <input type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none transition-colors" id="price-${index}">
+                                </div>
+                                <div><label class="text-sm font-bold mb-1 block">SKU</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none transition-colors" id="sku-${index}"></div>
+                                <div><label class="text-sm font-bold mb-1 block">Vendor</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" value="${escapeHtml(p.vendor || "")}" id="vendor-${index}"></div>
+                                <div><label class="text-sm font-bold mb-1 block">Qty</label><input type="number" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" id="qty-${index}"></div>
+                                <div><label class="text-sm font-bold mb-1 block">Type</label><input type="text" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" value="${escapeHtml(defaultType)}" id="type-${index}"></div>
+                                <div><label class="text-sm font-bold mb-1 block">Status</label><select id="status-${index}" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none"><option value="active">Active</option><option value="draft">Draft</option></select></div>
                             </div>
                             
                             <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -568,14 +711,12 @@
             let extraInfo = document.getElementById(`extra-${index}`).value.trim();
             if (extraInfo) finalCombinedHtml += "<br><br><strong>Product Information:</strong><br>" + extraInfo.replace(/\n/g, "<br>");
             
-            // Apply Size Chart Metafield specific to THIS product
             const scSelect = document.getElementById(`sizeChart-${index}`);
             let sizeChartId = "";
             if (scSelect && scSelect.value) {
-                sizeChartId = scSelect.value; // Store the Page ID for backend
+                sizeChartId = scSelect.value; 
             }
 
-            // Apply Variants
             let apiVariants = [];
             let apiOptions = [];
             const vRows = document.querySelectorAll(`#variants-${index} .variant-row`);
@@ -602,7 +743,7 @@
             const payload = {
                 action: "uploadProduct", 
                 collection_ids: selectedCollections,
-                size_chart_id: sizeChartId, // Pass Page ID to backend for Metafield
+                size_chart_id: sizeChartId, 
                 product: {
                     title: document.getElementById(`title-${index}`).value, body_html: finalCombinedHtml,
                     vendor: document.getElementById(`vendor-${index}`).value, product_type: document.getElementById(`type-${index}`).value,

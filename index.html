@@ -31,7 +31,7 @@
         #scEditor:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
         
         /* POS Table Styles */
-        #posTableBody tr:hover { background-color: #f1f5f9; cursor: pointer; }
+        #posTableBody tr:hover { background-color: #f1f5f9; }
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-8 font-sans text-gray-800 relative">
@@ -292,12 +292,22 @@
                             const safePrice = String(item.price).replace(/'/g, "\\'");
                             const safeSku = String(item.sku).replace(/'/g, "\\'");
                             
-                            rowsHtml += `<tr class="border-b" onclick="selectPosItem('${safePrice}', '${safeSku}')">
-                                <td class="p-3">${escapeHtml(item.sku)}</td>
+                            rowsHtml += `<tr class="border-b">
+                                <td class="p-3">
+                                    <div class="flex items-center gap-2">
+                                        <span>${escapeHtml(item.sku)}</span>
+                                        <button onclick="copyPosData('${safeSku}')" class="text-gray-400 hover:text-blue-600 transition" title="Copy SKU">📋</button>
+                                    </div>
+                                </td>
                                 <td class="p-3 font-medium text-gray-800">${escapeHtml(item.name)}</td>
-                                <td class="p-3 font-bold text-green-700">${escapeHtml(item.price)} TK</td>
+                                <td class="p-3 font-bold text-green-700">
+                                    <div class="flex items-center gap-2">
+                                        <span>${escapeHtml(item.price)} TK</span>
+                                        <button onclick="copyPosData('${safePrice}')" class="text-gray-400 hover:text-blue-600 transition" title="Copy Price">📋</button>
+                                    </div>
+                                </td>
                                 <td class="p-3 text-center">
-                                    <button class="bg-teal-100 text-teal-700 border border-teal-300 px-3 py-1 rounded text-xs font-bold hover:bg-teal-600 hover:text-white transition" onclick="event.stopPropagation(); selectPosItem('${safePrice}', '${safeSku}')">
+                                    <button class="bg-teal-100 text-teal-700 border border-teal-300 px-3 py-1 rounded text-xs font-bold hover:bg-teal-600 hover:text-white transition" onclick="selectPosItem('${safePrice}', '${safeSku}')">
                                         Select
                                     </button>
                                 </td>
@@ -364,6 +374,19 @@
         function closePosModal() { 
             document.getElementById('posModal').classList.add('hidden'); 
             activePosTargetIndex = null;
+        }
+
+        function copyPosData(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const msgBox = document.getElementById('posSearchMsg');
+                const oldMsg = msgBox.innerText;
+                msgBox.innerText = `Copied: ${text}`;
+                msgBox.classList.add('text-green-600');
+                setTimeout(() => {
+                    msgBox.innerText = oldMsg;
+                    msgBox.classList.remove('text-green-600');
+                }, 2000);
+            });
         }
         // --- END POS FUNCTIONS ---
 

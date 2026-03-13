@@ -491,7 +491,25 @@
         function renderColList(filterText = "") {
             const container = document.getElementById('colList'); container.innerHTML = "";
             const lowerFilter = filterText.toLowerCase();
-            let filtered = filterText === "" ? allCollections : allCollections.filter(c => c.title.toLowerCase().includes(lowerFilter));
+            
+            let filtered = filterText === "" ? allCollections : allCollections.filter(c => c.title.toLowerCase().includes(lowerFilter)).sort((a, b) => {
+                const titleA = a.title.toLowerCase();
+                const titleB = b.title.toLowerCase();
+                
+                // Priority 1: Exact Match (ekdom same to same word)
+                if (titleA === lowerFilter) return -1;
+                if (titleB === lowerFilter) return 1;
+                
+                // Priority 2: Starts With (search kora word diye shuru hole)
+                const startsWithA = titleA.startsWith(lowerFilter);
+                const startsWithB = titleB.startsWith(lowerFilter);
+                if (startsWithA && !startsWithB) return -1;
+                if (!startsWithA && startsWithB) return 1;
+                
+                // Priority 3: Baki gulo Alphabetical order e thakbe
+                return titleA.localeCompare(titleB);
+            });
+
             if(filtered.length === 0) return container.innerHTML = `<p class="p-2">No match</p>`;
             filtered.forEach(c => {
                 const isChecked = selectedCollections.includes(c.id);

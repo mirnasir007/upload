@@ -685,8 +685,8 @@
                             </div>
                             <div class="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
                                 <div>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <label class="text-sm font-bold">Price</label>
+                                        <div class="flex justify-between items-center mb-1">
+                                        <label class="text-sm font-bold flex items-center gap-2">Price <span class="text-xs bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded border border-orange-200 font-medium" title="Vendor Original Price">${p.price ? p.price : 'N/A'}</span></label>
                                         <button type="button" onclick="autoFetchPrice(${index})" class="text-[10px] bg-teal-100 text-teal-700 hover:bg-teal-200 px-1.5 py-0.5 rounded font-bold border border-teal-300 transition-colors shadow-sm">🔍 Add</button>
                                     </div>
                                     <input type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none transition-colors" id="price-${index}">

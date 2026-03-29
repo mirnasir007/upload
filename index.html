@@ -661,12 +661,35 @@
         function moveToType(index) { const t = document.getElementById(`title-${index}`), y = document.getElementById(`type-${index}`); if(t.value.trim()){ y.value = t.value; t.value = ""; } t.focus(); }
         function applyGlobalMoveToType() { currentProducts.forEach((_, i) => { if(document.getElementById(`card-${i}`)) moveToType(i); }); }
 
-        function appendProducts(newProducts) {
+function appendProducts(newProducts) {
             const container = document.getElementById('productContainer'); const startIndex = currentProducts.length; currentProducts.push(...newProducts);
             const pagesOptions = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
 
             newProducts.forEach((p, i) => {
                 const index = startIndex + i; const defaultType = p.product_type || p.title;
+
+                // --- NEW CODE: Price Formatter (Fixes 1250000 to 12,500) ---
+                let displayPrice = 'N/A';
+                if (p.price) {
+                    let priceStr = p.price.toString().trim();
+                    
+                    // Jodi scraper er karone 1250000 hoye thake, tahole last er 00 remove korbe
+                    if (/^\d+$/.test(priceStr) && priceStr.length > 2 && priceStr.endsWith('00')) {
+                        priceStr = priceStr.slice(0, -2);
+                    } else if (priceStr.includes('.')) {
+                        priceStr = priceStr.split('.')[0]; 
+                    }
+                    
+                    // Comma format apply kora hocche (e.g., 12500 -> 12,500)
+                    let parsedNum = parseInt(priceStr.replace(/[^0-9]/g, ''), 10);
+                    if (!isNaN(parsedNum)) {
+                        displayPrice = parsedNum.toLocaleString('en-US');
+                    } else {
+                        displayPrice = p.price;
+                    }
+                }
+                // -----------------------------------------------------------
+
                 const card = document.createElement('div'); card.id = `card-${index}`; card.className = "product-card bg-white shadow-sm hover:shadow-md transition";
                 card.innerHTML = `
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -686,7 +709,7 @@
                             <div class="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
                                 <div>
                                     <div class="flex justify-between items-center mb-1">
-                                        <label class="text-sm font-bold flex items-center gap-2">Price <span class="text-xs bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded border border-orange-200 font-medium" title="Vendor Original Price">${p.price ? p.price : 'N/A'}</span></label>
+                                        <label class="text-sm font-bold flex items-center gap-2">Price <span class="text-xs bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded border border-orange-200 font-medium" title="Vendor Original Price">${displayPrice}</span></label>
                                         <button type="button" onclick="autoFetchPrice(${index})" class="text-[10px] bg-teal-100 text-teal-700 hover:bg-teal-200 px-1.5 py-0.5 rounded font-bold border border-teal-300 transition-colors shadow-sm">🔍 Add</button>
                                     </div>
                                     <input type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none transition-colors" id="price-${index}">

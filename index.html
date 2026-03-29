@@ -657,10 +657,8 @@
                 }
             });
         }
-
-        function moveToType(index) { const t = document.getElementById(`title-${index}`), y = document.getElementById(`type-${index}`); if(t.value.trim()){ y.value = t.value; t.value = ""; } t.focus(); }
+function moveToType(index) { const t = document.getElementById(`title-${index}`), y = document.getElementById(`type-${index}`); if(t.value.trim()){ y.value = t.value; t.value = ""; } }
         function applyGlobalMoveToType() { currentProducts.forEach((_, i) => { if(document.getElementById(`card-${i}`)) moveToType(i); }); }
-
 function appendProducts(newProducts) {
             const container = document.getElementById('productContainer'); const startIndex = currentProducts.length; currentProducts.push(...newProducts);
             const pagesOptions = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');

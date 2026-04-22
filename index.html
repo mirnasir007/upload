@@ -32,13 +32,21 @@
         
         /* POS Table Styles */
         #posTableBody tr:hover { background-color: #f1f5f9; }
+        
+        /* Apply 80% zoom to the whole page */
+        body {
+            zoom: 80%;
+        }
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-8 font-sans text-gray-800 relative">
     <div class="w-full mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg border border-gray-100">
-        <h2 class="text-3xl font-extrabold mb-8 text-gray-900 border-b pb-4">Shopify Bulk Importer Pro</h2>
+        <h2 class="text-3xl font-extrabold mb-8 text-gray-900 border-b pb-4 flex justify-between items-center">
+            <span>Shopify Bulk Importer Pro</span>
+            <div id="mainLoader" class="loader border-blue-600 border-t-transparent w-8 h-8 border-4"></div>
+        </h2>
         
-        <div id="step1" class="space-y-6">
+        <div id="step1" class="space-y-6 hidden">
             <h3 class="text-xl font-bold text-gray-700 mb-2">Step 1: Target Destination</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -208,11 +216,8 @@
 
 
     <script>
-        // -- Main Shopify Web App URL --
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbywFzQu0m-wMkHFGAAy7irzlX20ixCBUqXEQfpmhlqNhG_Fa3113c9ufOvJxheDbUEO/exec"; 
-        
-        // -- NEW: POS Web App URL --
-        const POS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIJuMUv6tfueLimEIxaShSCX5FfkPgRTngZ8Lc7_tNNcNNfi7P_pt9slIXe4oAo7Vm3Q/exec";
+        // -- Universal API URL (One for All) --
+        const API_URL = "https://websiteuploadbackend.onrender.com/api";
         
         // POS State Variables
         let posCurrentPage = 1;
@@ -276,7 +281,7 @@
             if(isNewSearch) msgBox.innerText = "Searching POS... Please wait.";
             loadMoreBtn.classList.add('hidden');
 
-            const requestUrl = POS_SCRIPT_URL + "?search=" + encodeURIComponent(posSearchText) + "&page=" + posCurrentPage;
+            const requestUrl = API_URL + "?search=" + encodeURIComponent(posSearchText) + "&page=" + posCurrentPage;
             
             fetch(requestUrl)
                 .then(response => response.json())
@@ -392,14 +397,31 @@
 
 
         async function loadStoreData() {
+            const step1Div = document.getElementById('step1');
+            const mainLoader = document.getElementById('mainLoader');
+            
+            mainLoader.style.display = 'inline-block';
+            step1Div.classList.add('hidden');
+
             try {
-                const res = await fetch(WEB_APP_URL + "?action=getStoreData");
+                const res = await fetch(API_URL + "?action=getStoreData");
                 const data = await res.json();
                 if(data.status === "success") {
                     allCollections = data.collections; storeTags = data.tags; storePages = data.pages;
                     renderColList(); renderTagList();
+                } else {
+                    document.getElementById('colList').innerHTML = `<p class="text-sm text-red-500 p-2 font-bold">Error loading data. Check server logs.</p>`;
+                    document.getElementById('tagList').innerHTML = `<p class="text-sm text-red-500 p-2 font-bold">Error loading data. Check server logs.</p>`;
+                    console.error("Shopify Error:", data.message);
                 }
-            } catch (e) { console.error("API Error", e); }
+            } catch (e) {
+                document.getElementById('colList').innerHTML = `<p class="text-sm text-red-500 p-2 font-bold">Network Error. Is Node.js running?</p>`;
+                document.getElementById('tagList').innerHTML = `<p class="text-sm text-red-500 p-2 font-bold">Network Error. Is Node.js running?</p>`;
+                console.error("API Error", e);
+            } finally {
+                mainLoader.style.display = 'none';
+                step1Div.classList.remove('hidden');
+            }
         }
 
         function handleScImageUpload(event) {
@@ -444,7 +466,7 @@
             btn.innerText = "Saving to Shopify..."; btn.disabled = true;
             
             try {
-                const res = await (await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action: "createPage", title: title, body_html: html}) })).json();
+                const res = await (await fetch(API_URL, { method: 'POST', body: JSON.stringify({action: "createPage", title: title, body_html: html}) })).json();
                 if(res.status === "success") {
                     storePages.unshift(res.page);
                     document.querySelectorAll('.size-chart-dropdown').forEach(select => {
@@ -483,42 +505,48 @@
 
         function goToStep2() { document.getElementById('step1').classList.add('hidden'); document.getElementById('step2').classList.remove('hidden'); }
         function goToStep1() { document.getElementById('step2').classList.add('hidden'); document.getElementById('step1').classList.remove('hidden'); }
-        const setupDropdown = (b, m) => document.getElementById(b).addEventListener('click', e => { e.stopPropagation(); closeAllMenus(); document.getElementById(m).classList.toggle('show'); });
+        const setupDropdown = (b, m) => {
+            document.getElementById(b).addEventListener('click', e => { 
+                e.stopPropagation(); 
+                const menu = document.getElementById(m);
+                const isShowing = menu.classList.contains('show');
+                closeAllMenus(); 
+                if (!isShowing) menu.classList.add('show'); 
+            });
+            document.getElementById(m).addEventListener('click', e => e.stopPropagation());
+        };
         setupDropdown('colDropdownBtn', 'colDropdownMenu'); setupDropdown('tagDropdownBtn', 'tagDropdownMenu');
         function closeAllMenus() { document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show')); }
-        document.addEventListener('click', e => { if (!e.target.closest('.relative')) closeAllMenus(); });
+        document.addEventListener('click', () => closeAllMenus());
 
         function renderColList(filterText = "") {
-            const container = document.getElementById('colList'); container.innerHTML = "";
+            const container = document.getElementById('colList'); 
             const lowerFilter = filterText.toLowerCase();
             
             let filtered = filterText === "" ? allCollections : allCollections.filter(c => c.title.toLowerCase().includes(lowerFilter)).sort((a, b) => {
-                const titleA = a.title.toLowerCase();
-                const titleB = b.title.toLowerCase();
-                
-                // Priority 1: Exact Match (ekdom same to same word)
-                if (titleA === lowerFilter) return -1;
-                if (titleB === lowerFilter) return 1;
-                
-                // Priority 2: Starts With (search kora word diye shuru hole)
-                const startsWithA = titleA.startsWith(lowerFilter);
-                const startsWithB = titleB.startsWith(lowerFilter);
-                if (startsWithA && !startsWithB) return -1;
-                if (!startsWithA && startsWithB) return 1;
-                
-                // Priority 3: Baki gulo Alphabetical order e thakbe
+                const titleA = a.title.toLowerCase(); const titleB = b.title.toLowerCase();
+                if (titleA === lowerFilter) return -1; if (titleB === lowerFilter) return 1;
+                const startsWithA = titleA.startsWith(lowerFilter); const startsWithB = titleB.startsWith(lowerFilter);
+                if (startsWithA && !startsWithB) return -1; if (!startsWithA && startsWithB) return 1;
                 return titleA.localeCompare(titleB);
             });
 
-            if(filtered.length === 0) return container.innerHTML = `<p class="p-2">No match</p>`;
+            if(filtered.length === 0) {
+                container.innerHTML = `<p class="p-2">No match</p>`;
+                return;
+            }
+
+            // Super fast string-based rendering
+            let htmlStr = "";
             filtered.forEach(c => {
-                const isChecked = selectedCollections.includes(c.id);
+                const isChecked = selectedCollections.includes(c.id) ? 'checked' : '';
                 const badge = c.type === 'smart' ? `<span class="bg-indigo-100 text-indigo-800 px-1 rounded ml-2">Auto</span>` : `<span class="bg-green-100 text-green-800 px-1 rounded ml-2">Custom</span>`;
-                const label = document.createElement('label'); label.className = "list-item flex items-center space-x-3";
-                label.innerHTML = `<input type="checkbox" value="${c.id}" class="col-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked?'checked':''}><span class="text-sm font-medium">${escapeHtml(c.title)} ${badge}</span>`;
-                label.querySelector('input').addEventListener('change', e => handleColSelection(c.id, e.target.checked));
-                container.appendChild(label);
+                htmlStr += `<label class="list-item flex items-center space-x-3">
+                                <input type="checkbox" value="${c.id}" class="col-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked} onchange="handleColSelection(${c.id}, this.checked)">
+                                <span class="text-sm font-medium">${escapeHtml(c.title)} ${badge}</span>
+                            </label>`;
             });
+            container.innerHTML = htmlStr;
         }
         function handleColSelection(id, isChecked) {
             if (isChecked) { if (!selectedCollections.includes(id)) selectedCollections.push(id); } else { selectedCollections = selectedCollections.filter(cId => cId !== id); }
@@ -535,18 +563,27 @@
         }
 
         function renderTagList(filterText = "") {
-            const container = document.getElementById('tagList'); container.innerHTML = "";
+            const container = document.getElementById('tagList'); 
             const uniqueTags = [...new Set([...storeTags, ...selectedTags])];
             const lowerFilter = filterText.toLowerCase();
             let filtered = filterText === "" ? uniqueTags : uniqueTags.filter(t => t.toLowerCase().includes(lowerFilter));
-            if (filtered.length === 0) return container.innerHTML = `<p class="p-2">Press Enter to add.</p>`;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="p-2">Press Enter to add.</p>`;
+                return;
+            }
+
+            // Super fast string-based rendering
+            let htmlStr = "";
             filtered.forEach(t => {
-                const isChecked = selectedTags.includes(t);
-                const label = document.createElement('label'); label.className = "list-item flex items-center space-x-3";
-                label.innerHTML = `<input type="checkbox" value="${escapeHtml(t)}" class="tag-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked?'checked':''}><span class="text-sm font-medium">${escapeHtml(t)}</span>`;
-                label.querySelector('input').addEventListener('change', e => handleTagSelection(t, e.target.checked));
-                container.appendChild(label);
+                const safeTag = escapeHtml(t).replace(/'/g, "\\'");
+                const isChecked = selectedTags.includes(t) ? 'checked' : '';
+                htmlStr += `<label class="list-item flex items-center space-x-3">
+                                <input type="checkbox" value="${escapeHtml(t)}" class="tag-checkbox w-4 h-4 text-blue-600 rounded" ${isChecked} onchange="handleTagSelection('${safeTag}', this.checked)">
+                                <span class="text-sm font-medium">${escapeHtml(t)}</span>
+                            </label>`;
             });
+            container.innerHTML = htmlStr;
         }
         function handleTagSelection(tag, isChecked) {
             if (isChecked) { if (!selectedTags.includes(tag)) selectedTags.push(tag); } else { selectedTags = selectedTags.filter(t => t !== tag); }
@@ -616,7 +653,7 @@
             document.getElementById('bulkEditSection').classList.add('hidden'); document.getElementById('loadMoreDiv').classList.add('hidden');
 
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=fetchCollectionHandles&url=${encodeURIComponent(urlInput)}`);
+                const response = await fetch(`${API_URL}?action=fetchCollectionHandles&url=${encodeURIComponent(urlInput)}`);
                 const data = await response.json();
                 if(data.status === "success") {
                     allHandles = data.handles; vendorBaseUrl = data.baseUrl; loadedCount = 0; currentProducts = [];
@@ -633,7 +670,7 @@
             const handlesToLoad = allHandles.slice(loadedCount, loadedCount + BATCH_SIZE);
             if (handlesToLoad.length === 0) return;
             try {
-                const res = await fetch(`${WEB_APP_URL}?action=fetchProductBatch&baseUrl=${encodeURIComponent(vendorBaseUrl)}&handles=${encodeURIComponent(handlesToLoad.join(','))}`);
+                const res = await fetch(`${API_URL}?action=fetchProductBatch&baseUrl=${encodeURIComponent(vendorBaseUrl)}&handles=${encodeURIComponent(handlesToLoad.join(','))}`);
                 const data = await res.json();
                 if(data.status === "success") {
                     appendProducts(data.products); loadedCount += handlesToLoad.length;
@@ -671,14 +708,14 @@ function appendProducts(newProducts) {
                 if (p.price) {
                     let priceStr = p.price.toString().trim();
                     
-                    // Jodi scraper er karone 1250000 hoye thake, tahole last er 00 remove korbe
+                    // If price is 1250000 due to scraper, remove the last 00
                     if (/^\d+$/.test(priceStr) && priceStr.length > 2 && priceStr.endsWith('00')) {
                         priceStr = priceStr.slice(0, -2);
                     } else if (priceStr.includes('.')) {
                         priceStr = priceStr.split('.')[0]; 
                     }
                     
-                    // Comma format apply kora hocche (e.g., 12500 -> 12,500)
+                    // Apply comma formatting (e.g., 12500 -> 12,500)
                     let parsedNum = parseInt(priceStr.replace(/[^0-9]/g, ''), 10);
                     if (!isNaN(parsedNum)) {
                         displayPrice = parsedNum.toLocaleString('en-US');
@@ -816,7 +853,7 @@ function appendProducts(newProducts) {
             };
 
             try {
-                const res = await (await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })).json();
+                const res = await (await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) })).json();
                 if(res.status === "success") {
                     const card = document.getElementById(`card-${index}`);
                     card.innerHTML = `<div class="text-center py-12 bg-green-50 rounded-lg border border-green-200"><h3 class="text-3xl font-extrabold text-green-600 mb-2">✓ Uploaded Successfully</h3><p class="text-green-700 font-medium text-lg">Product: ${escapeHtml(payload.product.title)}</p></div>`;

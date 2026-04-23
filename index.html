@@ -865,6 +865,12 @@ function appendProducts(newProducts) {
             const btn = document.getElementById(`upBtn-${index}`); btn.innerText = "Processing..."; btn.disabled = true; btn.classList.replace('bg-green-600', 'bg-gray-400');
             
             let finalCombinedHtml = document.getElementById(`desc-${index}`).value;
+            
+            // Convert plain text line breaks to HTML for manual uploads
+            if (currentProducts[index].is_manual) {
+                finalCombinedHtml = finalCombinedHtml.replace(/\n/g, "<br>");
+            }
+            
             let extraInfo = document.getElementById(`extra-${index}`).value.trim();
             if (extraInfo) finalCombinedHtml += "<br><br><strong>Product Information:</strong><br>" + extraInfo.replace(/\n/g, "<br>");
             

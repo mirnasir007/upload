@@ -79,18 +79,34 @@
 
         <div id="step2" class="hidden space-y-6">
             <div class="flex justify-between items-center border-b pb-4 mb-4">
-                <h3 class="text-xl font-bold text-gray-700">Step 2: Fetch & Import</h3>
+                <div class="flex items-center gap-4">
+                    <h3 class="text-xl font-bold text-gray-700">Step 2: Fetch & Import</h3>
+                    <label class="flex items-center gap-2 cursor-pointer bg-blue-50 px-3 py-1.5 rounded border border-blue-200 shadow-sm hover:bg-blue-100 transition">
+                        <input type="checkbox" id="autoModeToggle" checked onchange="toggleInputMode()" class="w-4 h-4 text-blue-600 rounded">
+                        <span class="text-sm font-bold text-blue-800">Auto Mode</span>
+                    </label>
+                </div>
                 <button onclick="goToStep1()" class="text-sm text-blue-600 hover:underline font-semibold">← Back to Settings</button>
             </div>
 
             <div class="sticky top-0 z-[40] bg-white bg-opacity-95 backdrop-blur-sm p-4 -mx-4 shadow-md border-b border-gray-200 mb-8 flex flex-col xl:flex-row gap-6 items-end">
                 
-                <div class="flex-1 w-full xl:w-1/2">
+                <div id="autoInputSection" class="flex-1 w-full xl:w-1/2">
                     <label class="block text-sm font-bold text-blue-800 mb-2">1. Vendor Collection URL</label>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <input type="text" id="collectionUrl" placeholder="https://vendor.com/collections/all" class="flex-1 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" onkeypress="if(event.key === 'Enter') fetchCollection()">
                         <button onclick="fetchCollection()" id="loadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded shadow-md flex items-center justify-center transition whitespace-nowrap">
                             Load Products <div id="spinner" class="loader border-white border-t-transparent hidden" style="display:none;"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="manualInputSection" class="flex-1 w-full xl:w-1/2 hidden">
+                    <label class="block text-sm font-bold text-indigo-800 mb-2">1. Manual Product Cards</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="number" id="manualCardCount" placeholder="Quantity (e.g. 5)" min="1" value="1" class="flex-1 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" onkeypress="if(event.key === 'Enter') generateManualCards()">
+                        <button onclick="generateManualCards()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded shadow-md flex items-center justify-center transition whitespace-nowrap">
+                            Add Cards
                         </button>
                     </div>
                 </div>
@@ -393,6 +409,52 @@
         }
         // --- END POS FUNCTIONS ---
 
+        // --- NEW MANUAL MODE FUNCTIONS ---
+        function toggleInputMode() {
+            const isAuto = document.getElementById('autoModeToggle').checked;
+            if(isAuto) {
+                document.getElementById('autoInputSection').classList.remove('hidden');
+                document.getElementById('manualInputSection').classList.add('hidden');
+            } else {
+                document.getElementById('autoInputSection').classList.add('hidden');
+                document.getElementById('manualInputSection').classList.remove('hidden');
+            }
+        }
+
+        function generateManualCards() {
+            const count = parseInt(document.getElementById('manualCardCount').value) || 1;
+            const blankProducts = [];
+            for(let i=0; i<count; i++){
+                blankProducts.push({
+                    title: "", body_html: "", extra_info: "", vendor: "", product_type: "", status: "active", tags: "",
+                    images: [], variants: [], price: "", is_manual: true
+                });
+            }
+            document.getElementById('bulkEditSection').classList.remove('hidden');
+            appendProducts(blankProducts);
+            document.getElementById('manualCardCount').value = "1";
+        }
+
+        function handleManualImageUpload(event, index) {
+            const files = event.target.files;
+            if(!files || files.length === 0) return;
+            
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentProducts[index].images.push({ src: e.target.result });
+                    renderImagesOnly(index);
+                    const upBtn = document.getElementById(`upBtn-${index}`);
+                    if(upBtn && upBtn.classList.contains('hidden')) {
+                        upBtn.classList.remove('hidden');
+                        upBtn.disabled = false;
+                    }
+                }
+                reader.readAsDataURL(file);
+            });
+            event.target.value = ""; 
+        }
+        // --- END MANUAL MODE FUNCTIONS ---
 
         async function loadStoreData() {
             try {
@@ -768,7 +830,18 @@ function appendProducts(newProducts) {
                         
                         <div class="lg:col-span-4 bg-gray-50 p-5 rounded-lg border flex flex-col justify-between">
                             <div><label class="text-sm font-bold mb-3 border-b pb-2 block">Media</label><div class="img-grid bg-white" id="imgs-${index}"></div></div>
-                            <button onclick="uploadToShopify(${index})" id="upBtn-${index}" class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold shadow">Upload to Store</button>
+                            
+                            ${p.is_manual ? `
+                                <div class="mt-4">
+                                    <label class="cursor-pointer bg-blue-100 text-blue-800 px-4 py-3 rounded-lg font-bold border border-blue-300 text-sm hover:bg-blue-200 transition text-center block w-full shadow-sm">
+                                        📁 Upload Media
+                                        <input type="file" multiple accept="image/*" class="hidden" onchange="handleManualImageUpload(event, ${index})">
+                                    </label>
+                                </div>
+                                <button onclick="uploadToShopify(${index})" id="upBtn-${index}" disabled class="hidden w-full mt-3 bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold shadow transition">Upload to Store</button>
+                            ` : `
+                                <button onclick="uploadToShopify(${index})" id="upBtn-${index}" class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold shadow transition">Upload to Store</button>
+                            `}
                         </div>
                     </div>
                 `;

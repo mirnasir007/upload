@@ -522,15 +522,19 @@
             })).json();
                 if(res.status === "success") {
                     storePages.unshift(res.page);
-                    document.querySelectorAll('.size-chart-dropdown').forEach(select => {
-                        const currentVal = select.value;
-                        const optionsHtml = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
-                        select.innerHTML = '<option value="">-- No Size Chart --</option>' + optionsHtml;
-                        select.value = currentVal;
+                    
+                    // Re-render all custom dropdown lists
+                    document.querySelectorAll('.size-chart-hidden-val').forEach(input => {
+                        const index = input.id.split('-')[1];
+                        const listDiv = document.getElementById(`scList-${index}`);
+                        if(listDiv) {
+                            listDiv.innerHTML = `<div class="list-item p-2 hover:bg-gray-100 cursor-pointer" onclick="selectSizeChart(${index}, '', '-- No Size Chart --')">-- No Size Chart --</div>` + 
+                                storePages.map(p => `<div class="list-item p-2 hover:bg-gray-100 cursor-pointer sc-option-${index}" data-title="${escapeHtml(p.title).toLowerCase()}" onclick="selectSizeChart(${index}, '${p.id}', '${escapeHtml(p.title).replace(/'/g, "\\'")}')">${escapeHtml(p.title)}</div>`).join('');
+                        }
                     });
+                    
                     if(targetSizeChartIndex !== null) {
-                        const targetDropdown = document.getElementById(`sizeChart-${targetSizeChartIndex}`);
-                        if(targetDropdown) targetDropdown.value = res.page.id; 
+                        selectSizeChart(targetSizeChartIndex, res.page.id, res.page.title);
                     }
                     closeSizeChartModal();
                 } else { alert("Error: " + res.message); }
@@ -547,7 +551,7 @@ function addVariantRow(pIdx) {
             const row = document.createElement('div');
             row.className = "flex gap-2 items-center variant-row mt-2 bg-white p-2 border rounded shadow-sm";
             row.innerHTML = `
-                <input type="text" placeholder="Value (e.g. XL)" oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1)" class="var-val p-2 border border-gray-300 rounded w-1/4 text-sm font-bold focus:border-blue-500 outline-none">
+                <input type="text" placeholder="Value (e.g. XL)" oninput="this.value = this.value.toUpperCase()" class="var-val p-2 border border-gray-300 rounded w-1/4 text-sm font-bold focus:border-blue-500 outline-none">
                 <input type="number" step="0.01" placeholder="Price" class="var-price p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${basePrice}">
                 <input type="text" placeholder="SKU" class="var-sku p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${baseSku}">
                 <input type="number" placeholder="Qty" class="var-qty p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${baseQty}">
@@ -743,9 +747,33 @@ function addVariantRow(pIdx) {
         }
 function moveToType(index) { const t = document.getElementById(`title-${index}`), y = document.getElementById(`type-${index}`); if(t.value.trim()){ y.value = t.value; t.value = ""; } }
         function applyGlobalMoveToType() { currentProducts.forEach((_, i) => { if(document.getElementById(`card-${i}`)) moveToType(i); }); }
+
+        // --- NEW: Size Chart Dropdown Search Functions ---
+        function toggleScDropdown(e, index) {
+            e.stopPropagation();
+            closeAllMenus();
+            const menu = document.getElementById(`scDropdownMenu-${index}`);
+            menu.classList.toggle('show');
+            if(menu.classList.contains('show')) document.getElementById(`scSearch-${index}`).focus();
+        }
+        function filterScDropdown(index, query) {
+            const q = query.toLowerCase();
+            document.querySelectorAll(`.sc-option-${index}`).forEach(item => {
+                if (item.getAttribute('data-title').includes(q)) item.style.display = 'block';
+                else item.style.display = 'none';
+            });
+        }
+        function selectSizeChart(index, id, title) {
+            document.getElementById(`sizeChart-${index}`).value = id;
+            document.getElementById(`scDropdownText-${index}`).innerText = title;
+            document.getElementById(`scDropdownText-${index}`).classList.remove('text-gray-500');
+            document.getElementById(`scDropdownText-${index}`).classList.add('text-gray-900');
+            closeAllMenus();
+        }
+        // ------------------------------------------------
+
 function appendProducts(newProducts) {
             const container = document.getElementById('productContainer'); const startIndex = currentProducts.length; currentProducts.push(...newProducts);
-            const pagesOptions = storePages.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('');
 
             newProducts.forEach((p, i) => {
                 const index = startIndex + i; const defaultType = p.product_type || p.title;
@@ -806,12 +834,20 @@ function appendProducts(newProducts) {
                             <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 
                                 <div class="flex justify-between items-end gap-2 mb-4 pb-4 border-b border-gray-200">
-                                    <div class="flex-1">
+                                    <div class="flex-1 relative">
                                         <label class="text-sm font-bold text-gray-700 block mb-1">📐 Size Chart Page (Optional):</label>
-                                        <select id="sizeChart-${index}" class="p-2 border border-gray-300 rounded w-full text-sm size-chart-dropdown bg-white focus:border-blue-500 outline-none">
-                                            <option value="">-- No Size Chart --</option>
-                                            ${pagesOptions}
-                                        </select>
+                                        <input type="hidden" id="sizeChart-${index}" class="size-chart-hidden-val" value="">
+                                        <button id="scDropdownBtn-${index}" type="button" onclick="toggleScDropdown(event, ${index})" class="w-full bg-white border border-gray-300 p-2 rounded flex justify-between items-center text-sm focus:border-blue-500 outline-none">
+                                            <span id="scDropdownText-${index}" class="truncate text-gray-500">-- No Size Chart --</span>
+                                            <span class="text-xs text-gray-400">▼</span>
+                                        </button>
+                                        <div id="scDropdownMenu-${index}" class="dropdown-menu">
+                                            <input type="text" id="scSearch-${index}" placeholder="Search size chart..." class="w-full p-2 border-b border-gray-200 focus:outline-none text-sm" onclick="event.stopPropagation()" oninput="filterScDropdown(${index}, this.value)">
+                                            <div id="scList-${index}" class="max-h-40 overflow-y-auto p-1 text-sm bg-white">
+                                                <div class="list-item p-2 hover:bg-gray-100 cursor-pointer" onclick="selectSizeChart(${index}, '', '-- No Size Chart --')">-- No Size Chart --</div>
+                                                ${storePages.map(page => `<div class="list-item p-2 hover:bg-gray-100 cursor-pointer sc-option-${index}" data-title="${escapeHtml(page.title).toLowerCase()}" onclick="selectSizeChart(${index}, '${page.id}', '${escapeHtml(page.title).replace(/'/g, "\\'")}')">${escapeHtml(page.title)}</div>`).join('')}
+                                            </div>
+                                        </div>
                                     </div>
                                     <button onclick="openSizeChartModal(${index})" class="bg-blue-100 text-blue-700 px-4 py-2 rounded hover:bg-blue-200 font-bold border border-blue-300 text-sm h-[38px] flex items-center shadow-sm">➕ Create New</button>
                                 </div>

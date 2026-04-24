@@ -538,7 +538,7 @@
             btn.innerText = "Save & Apply to Product"; btn.disabled = false;
         }
 
-        function addVariantRow(pIdx) {
+function addVariantRow(pIdx) {
             const container = document.getElementById(`variants-${pIdx}`);
             const basePrice = document.getElementById(`price-${pIdx}`).value;
             const baseSku = document.getElementById(`sku-${pIdx}`).value;
@@ -547,7 +547,7 @@
             const row = document.createElement('div');
             row.className = "flex gap-2 items-center variant-row mt-2 bg-white p-2 border rounded shadow-sm";
             row.innerHTML = `
-                <input type="text" placeholder="Value (e.g. XL)" class="var-val p-2 border border-gray-300 rounded w-1/4 text-sm font-bold focus:border-blue-500 outline-none">
+                <input type="text" placeholder="Value (e.g. XL)" oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1)" class="var-val p-2 border border-gray-300 rounded w-1/4 text-sm font-bold focus:border-blue-500 outline-none">
                 <input type="number" step="0.01" placeholder="Price" class="var-price p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${basePrice}">
                 <input type="text" placeholder="SKU" class="var-sku p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${baseSku}">
                 <input type="number" placeholder="Qty" class="var-qty p-2 border border-gray-300 rounded w-1/4 text-sm focus:border-blue-500 outline-none" value="${baseQty}">

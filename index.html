@@ -436,10 +436,17 @@
         }
 
         function handleManualImageUpload(event, index) {
-            const files = event.target.files;
+            let files;
+            if (event.type === 'drop') {
+                files = event.dataTransfer.files;
+            } else {
+                files = event.target.files;
+            }
+            
             if(!files || files.length === 0) return;
             
             Array.from(files).forEach(file => {
+                if (!file.type.startsWith('image/')) return;
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     currentProducts[index].images.push({ src: e.target.result });
@@ -452,7 +459,9 @@
                 }
                 reader.readAsDataURL(file);
             });
-            event.target.value = ""; 
+            if (event.target && event.target.value) {
+                event.target.value = ""; 
+            }
         }
         // --- END MANUAL MODE FUNCTIONS ---
 
@@ -869,8 +878,12 @@ function appendProducts(newProducts) {
                             
                             ${p.is_manual ? `
                                 <div class="mt-4">
-                                    <label class="cursor-pointer bg-blue-100 text-blue-800 px-4 py-3 rounded-lg font-bold border border-blue-300 text-sm hover:bg-blue-200 transition text-center block w-full shadow-sm">
-                                        📁 Upload Media
+                                    <label 
+                                        ondragover="event.preventDefault(); this.classList.add('bg-blue-300');" 
+                                        ondragleave="this.classList.remove('bg-blue-300');" 
+                                        ondrop="event.preventDefault(); this.classList.remove('bg-blue-300'); handleManualImageUpload(event, ${index})" 
+                                        class="cursor-pointer bg-blue-100 text-blue-800 px-4 py-3 rounded-lg font-bold border-2 border-dashed border-blue-400 text-sm hover:bg-blue-200 transition text-center block w-full shadow-sm">
+                                        📁 Upload Media (Drag & Drop or Click)
                                         <input type="file" multiple accept="image/*" class="hidden" onchange="handleManualImageUpload(event, ${index})">
                                     </label>
                                 </div>

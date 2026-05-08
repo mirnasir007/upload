@@ -781,6 +781,31 @@ function moveToType(index) { const t = document.getElementById(`title-${index}`)
         }
         // ------------------------------------------------
 
+        function cleanScrapedInfo(text) {
+            if (!text) return "";
+            try {
+                let cleaned = String(text);
+                
+                // 1. Remove specific broken tags at the start (like /span>)
+                cleaned = cleaned.replace(/^[\s\n]*\/?(?:span|div|p|a|ul|li|b|strong|i|em)>[\s\n]*/i, '');
+                
+                // 2. Remove all complete HTML tags
+                cleaned = cleaned.replace(/<[^>]*>/g, '');
+                
+                // 3. Remove broken opening tags at the end (like <details...)
+                cleaned = cleaned.replace(/<[a-zA-Z][^>]*$/i, '');
+                
+                // 4. Remove extra empty lines & decode HTML entities
+                cleaned = cleaned.replace(/^\s*[\r\n]/gm, '');
+                cleaned = cleaned.replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
+                
+                return cleaned.trim();
+            } catch (error) {
+                console.error("Clean Error:", error);
+                return text; // Failsafe: Return original text instead of crashing
+            }
+        }
+
 function appendProducts(newProducts) {
             const container = document.getElementById('productContainer'); const startIndex = currentProducts.length; currentProducts.push(...newProducts);
 
@@ -823,7 +848,7 @@ function appendProducts(newProducts) {
                             <input type="text" class="w-full p-3 border border-gray-300 rounded mb-4 font-medium focus:border-blue-500 outline-none" value="${escapeHtml(p.title)}" id="title-${index}">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div><div class="flex justify-between mb-1"><label class="text-sm font-bold">Description (HTML)</label><button onclick="previewHtml(${index})" class="text-xs bg-gray-200 px-2 rounded font-bold">👁️ View</button></div><textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:border-blue-500 outline-none" id="desc-${index}">${escapeHtml(p.body_html || "")}</textarea></div>
-                                <div><label class="text-sm font-bold mb-1 block">Scraped Info</label><textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:border-blue-500 outline-none" id="extra-${index}">${escapeHtml(p.extra_info || "")}</textarea></div>
+                                <div><label class="text-sm font-bold mb-1 block">Scraped Info</label><textarea class="w-full p-3 border border-gray-300 rounded h-40 font-mono text-sm focus:border-blue-500 outline-none" id="extra-${index}">${escapeHtml(cleanScrapedInfo(p.extra_info || ""))}</textarea></div>
                             </div>
                             <div class="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
                                 <div>

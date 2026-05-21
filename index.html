@@ -615,17 +615,34 @@ function validateCard(idx) {
     const desc = document.getElementById(`desc-${idx}`);
     const extra = document.getElementById(`extra-${idx}`);
     const upBtn = document.getElementById(`upBtn-${idx}`);
+    const addVarBtn = document.getElementById(`addVarBtn-${idx}`);
+    const autoSizeBtn = document.getElementById(`autoSizeBtn-${idx}`);
 
     if(!title || !upBtn) return; 
 
     let isValid = true;
+    let isVariantValid = true;
 
     if(!title.value.trim()) { setInvalid(title); isValid = false; } else { setValid(title); }
-    if(!price.value.trim()) { setInvalid(price); isValid = false; } else { setValid(price); }
-    if(!sku.value.trim()) { setInvalid(sku); isValid = false; } else { setValid(sku); }
+    if(!price.value.trim()) { setInvalid(price); isValid = false; isVariantValid = false; } else { setValid(price); }
+    if(!sku.value.trim()) { setInvalid(sku); isValid = false; isVariantValid = false; } else { setValid(sku); }
     if(!vendor.value.trim()) { setInvalid(vendor); isValid = false; } else { setValid(vendor); }
     if(!qty.value.trim()) { setInvalid(qty); isValid = false; } else { setValid(qty); }
     if(!type.value.trim()) { setInvalid(type); isValid = false; } else { setValid(type); }
+    
+    if (addVarBtn && autoSizeBtn) {
+        if (isVariantValid) {
+            addVarBtn.disabled = false;
+            addVarBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            autoSizeBtn.disabled = false;
+            autoSizeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            addVarBtn.disabled = true;
+            addVarBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            autoSizeBtn.disabled = true;
+            autoSizeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
 
     const descVal = desc.value.trim();
     const extraVal = extra.value.trim();
@@ -1033,8 +1050,8 @@ function appendProducts(newProducts) {
                                         <input type="text" id="optName-${index}" value="Size" class="p-1 border border-gray-300 rounded w-24 text-sm font-bold text-center bg-white shadow-sm focus:border-blue-500 outline-none">
                                     </div>
                                     <div>
-                                        <button onclick="addVariantRow(${index})" class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 font-bold shadow-sm">+ Add Variant</button>
-                                        <button onclick="addAutoVariants(${index})" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 font-bold shadow-sm ml-2">📐 + Auto Sizes</button>
+                                        <button id="addVarBtn-${index}" onclick="addVariantRow(${index})" class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 font-bold shadow-sm">+ Add Variant</button>
+                                        <button id="autoSizeBtn-${index}" onclick="addAutoVariants(${index})" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 font-bold shadow-sm ml-2">📐 + Auto Sizes</button>
                                     </div>
                                 </div>
                                 <div id="variants-${index}"></div>

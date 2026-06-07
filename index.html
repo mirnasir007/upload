@@ -130,6 +130,7 @@
                 <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Vendor</label><input type="text" id="globalVendor" class="p-3 border border-gray-300 rounded w-48"></div>
                 <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Qty</label><input type="number" id="globalQty" class="p-3 border border-gray-300 rounded w-32"></div>
                 <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Type</label><input type="text" id="globalType" class="p-3 border border-gray-300 rounded w-48"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Scraped Info</label><textarea id="globalExtra" class="p-3 border border-gray-300 rounded w-48" rows="2" style="resize: vertical;"></textarea></div>
                 <div><label class="block text-sm font-bold text-gray-700 mb-1">Global Status</label><select id="globalStatus" class="p-3 border border-gray-300 rounded w-32"><option value="">-- Select --</option><option value="active">Active</option><option value="draft">Draft</option></select></div>
                 
                 <div class="flex flex-col justify-end pb-1"><span id="loadedProductsCount" class="text-sm font-bold text-gray-700 bg-blue-100 px-3 py-2 rounded border border-blue-200">Loaded: 0</span></div>
@@ -902,12 +903,14 @@ function addVariantRow(pIdx) {
         function applyGlobalSettings() {
             const t = document.getElementById('globalTitle').value, p = document.getElementById('globalPrice').value, s = document.getElementById('globalSku').value;
             const v = document.getElementById('globalVendor').value, q = document.getElementById('globalQty').value, ty = document.getElementById('globalType').value, st = document.getElementById('globalStatus').value;
+            const ex = document.getElementById('globalExtra').value;
             currentProducts.forEach((_, idx) => {
                 if (document.getElementById(`card-${idx}`)) {
                     if (t) document.getElementById(`title-${idx}`).value = t; if (p) document.getElementById(`price-${idx}`).value = p;
                     if (s) document.getElementById(`sku-${idx}`).value = s; if (v) document.getElementById(`vendor-${idx}`).value = v;
                     if (q) document.getElementById(`qty-${idx}`).value = q; if (ty) document.getElementById(`type-${idx}`).value = ty;
                     if (st) document.getElementById(`status-${idx}`).value = st;
+                    if (ex) document.getElementById(`extra-${idx}`).value = ex;
                     validateCard(idx);
                 }
             });

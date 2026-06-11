@@ -1089,10 +1089,41 @@ function appendProducts(newProducts) {
         }
         
         function removeProductCard(idx) { const c = document.getElementById(`card-${idx}`); if(c){ c.style.opacity = "0"; setTimeout(()=>{ c.remove(); updateLoadedCount(); }, 300); } }
-        function renderImagesOnly(idx) { const c = document.getElementById(`imgs-${idx}`); if(!c) return; const p = currentProducts[idx]; if(p.images.length === 0) return c.innerHTML = '<p>No images.</p>'; c.innerHTML = p.images.map((img, i) => `<div class="img-item" draggable="true" ondragstart="dragStart(event, ${idx}, ${i})" ondragover="dragOver(event)" ondrop="drop(event, ${idx}, ${i})"><img src="${img.src}" class="${i===0?'main-img':''}"><span class="remove-btn" onclick="removeImg(${idx}, ${i})">×</span><span class="view-btn" onclick="openImageModal('${img.src}')">👁️</span></div>`).join(''); }
-        function dragStart(e, pIdx, imgIdx) { e.dataTransfer.setData("text", JSON.stringify({ pIdx, imgIdx })); }
-        function dragOver(e) { e.preventDefault(); }
-        function drop(e, tIdx, tImg) { e.preventDefault(); const d = JSON.parse(e.dataTransfer.getData("text")); if (d.pIdx === tIdx && d.imgIdx !== tImg) { const img = currentProducts[tIdx].images.splice(d.imgIdx, 1)[0]; currentProducts[tIdx].images.splice(tImg, 0, img); renderImagesOnly(tIdx); } }
+        function renderImagesOnly(idx) { 
+            const c = document.getElementById(`imgs-${idx}`); 
+            if(!c) return; 
+            const p = currentProducts[idx]; 
+            if(p.images.length === 0) return c.innerHTML = '<p>No images.</p>'; 
+            c.innerHTML = p.images.map((img, i) => `<div class="img-item" draggable="true" ondragstart="dragStart(event, ${idx}, ${i})" ondragover="dragOver(event)" ondragend="dragEnd(event)" ondrop="drop(event, ${idx}, ${i})"><img src="${img.src}" draggable="false" class="${i===0?'main-img':''} pointer-events-none"><span class="remove-btn pointer-events-auto" onclick="removeImg(${idx}, ${i})">×</span><span class="view-btn pointer-events-auto" onclick="openImageModal('${img.src}')">👁️</span></div>`).join(''); 
+        }
+        function dragStart(e, pIdx, imgIdx) { 
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text", JSON.stringify({ pIdx, imgIdx })); 
+            setTimeout(() => e.target.style.opacity = "0.5", 0);
+        }
+        function dragEnd(e) { 
+            e.target.style.opacity = "1"; 
+        }
+        function dragOver(e) { 
+            e.preventDefault(); 
+            e.dataTransfer.dropEffect = "move";
+        }
+        function drop(e, tIdx, tImg) { 
+            e.preventDefault(); 
+            e.stopPropagation();
+            try {
+                const data = e.dataTransfer.getData("text");
+                if(!data) return;
+                const d = JSON.parse(data); 
+                if (d.pIdx === tIdx && d.imgIdx !== tImg) { 
+                    const img = currentProducts[tIdx].images.splice(d.imgIdx, 1)[0]; 
+                    currentProducts[tIdx].images.splice(tImg, 0, img); 
+                    renderImagesOnly(tIdx); 
+                } 
+            } catch (err) {
+                console.error("Drop Error:", err);
+            }
+        }
         function removeImg(pIdx, imgIdx) { currentProducts[pIdx].images.splice(imgIdx, 1); renderImagesOnly(pIdx); validateCard(pIdx); }
         function openImageModal(src) { document.getElementById('modalImage').src = src; document.getElementById('imageModal').classList.remove('hidden'); }
         function closeImageModal() { document.getElementById('imageModal').classList.add('hidden'); }

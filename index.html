@@ -69,7 +69,13 @@
                 </div>
 
                 <div class="relative">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Global Tags</label>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-bold text-gray-700">Global Tags</label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="addQuickTag('Stitched')" class="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded transition">Stitched</button>
+                            <button type="button" onclick="addQuickTag('Unstitched')" class="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded transition">Unstitched</button>
+                        </div>
+                    </div>
                     <button id="tagDropdownBtn" type="button" class="w-full bg-white border border-gray-300 p-3 rounded-lg flex justify-between items-center text-gray-700 hover:border-blue-500 transition">
                         <span id="tagDropdownText" class="truncate font-medium">Select Tags</span>
                         <span class="text-xs text-gray-400">▼</span>
@@ -841,6 +847,11 @@ function addVariantRow(pIdx) {
             document.getElementById('tagDropdownText').innerText = selectedTags.length > 0 ? `${selectedTags.length} Tag(s)` : "Select Tags";
             updateSelectedTagsUI();
             document.querySelectorAll('.tag-checkbox').forEach(cb => { if(cb.value === escapeHtml(tag)) cb.checked = isChecked; });
+        }
+        function addQuickTag(tag) {
+            if (!storeTags.includes(tag)) storeTags.push(tag);
+            handleTagSelection(tag, true);
+            renderTagList(document.getElementById('tagSearch').value);
         }
         function updateSelectedTagsUI() {
             const container = document.getElementById('selectedTagsContainer'); container.innerHTML = "";
